@@ -7,11 +7,7 @@ import {
   CheckCircle2, Filter, ArrowUpDown, FileSpreadsheet, CalendarClock, RefreshCw, Eye,
 } from 'lucide-react';
 import type { Customer, InsuranceService, Policy, PolicyStatus } from '@/lib/types';
-import {
-  EXPIRY_FILTERS, aciliyet, filtreyeUyuyorMu, formatTarih, formatTutar, kalanGun,
-  musteriAdi, toWhatsAppNumber, whatsappBaglantisi, hatirlatmaMetniOlustur,
-  VARSAYILAN_HATIRLATMA_METNI,
-} from '@/lib/police';
+import { EXPIRY_FILTERS, VARSAYILAN_HATIRLATMA_METNI, aciliyet, filtreyeUyuyorMu, formatTarih, formatTutar, hatirlatmaMetniOlustur, kalanGun, musteriAdi, plakayiBul, riskTanimiPlakasiz, toWhatsAppNumber, whatsappBaglantisi } from '@/lib/police';
 import {
   birYilSonrasi, gecmisDegerler, komisyonHesapla, sureyiCikar, tarihEkle,
   type SureBirimi,
@@ -664,7 +660,25 @@ export default function PolicyTrackingPage() {
                           {p.policeNo && <KopyaDugmesi deger={p.policeNo} etiket="Poliçe No" />}
                         </div>
                         <div className="text-[10px] text-slate-500 mt-0.5">{p.sigortaSirketi}</div>
-                        {p.riskTanimi && <div className="text-[10px] text-slate-400">{p.riskTanimi}</div>}
+                        {/* Plaka ayrı yazılıp kendi kopyalama düğmesini taşır;
+                            müşteri kartındaki poliçe satırıyla aynı düzen. Şirket
+                            ekranlarına ve TRAMER sorgusuna elle giriliyor. */}
+                        {(() => {
+                          const plaka = plakayiBul(p.bransAlanlari);
+                          const kalan = riskTanimiPlakasiz(p.riskTanimi, plaka);
+                          if (!plaka && !kalan) return null;
+                          return (
+                            <div className="text-[10px] text-slate-400 flex items-center gap-1 flex-wrap">
+                              {plaka && (
+                                <span className="inline-flex items-center gap-0.5">
+                                  <span className="font-mono text-slate-600">{plaka}</span>
+                                  <KopyaDugmesi deger={plaka} etiket="Plaka" />
+                                </span>
+                              )}
+                              {kalan && <span>{plaka ? `· ${kalan}` : kalan}</span>}
+                            </div>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-3 text-slate-600">{formatTarih(p.baslangicTarihi)}</td>
                       <td className="px-4 py-3 font-semibold text-slate-800">{formatTarih(p.bitisTarihi)}</td>

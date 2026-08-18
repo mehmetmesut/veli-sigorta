@@ -190,3 +190,36 @@ export function whatsappBaglantisi(telefon: string | undefined, mesaj: string): 
   if (!numara) return null;
   return `https://wa.me/${numara}?text=${encodeURIComponent(mesaj)}`;
 }
+
+/**
+ * Poliçenin branş alanlarından plakayı çıkarır.
+ *
+ * Plaka veritabanında `bransAlanlari` sözlüğünde AYRI bir değer olarak durur ama
+ * ekranda `riskTanimi` cümlesine gömülü gösteriliyordu ("07 MMY 68 · BYD SEAL U
+ * DM-İ (2025)"); kopyalamak için elle seçmek gerekiyordu.
+ *
+ * Alan adları branş formundan geldiği için serbest metin; anahtar büyük/küçük
+ * harf farkıyla yazılmış olabilir. Türkçe katlama kullanılır — `toLowerCase()`
+ * "PLAKA" içindeki I'yı "i" yapar ve "plaka" ile eşleşmez.
+ */
+export function plakayiBul(bransAlanlari: Record<string, string> | undefined): string | undefined {
+  if (!bransAlanlari) return undefined;
+  const anahtar = Object.keys(bransAlanlari).find(
+    (k) => k.trim().toLocaleLowerCase('tr-TR') === 'plaka',
+  );
+  const deger = anahtar ? bransAlanlari[anahtar]?.trim() : '';
+  return deger || undefined;
+}
+
+/**
+ * Risk tanımından baştaki plaka kopyasını ayıklar.
+ *
+ * Plaka ayrı gösterildiğinde satırda iki kez yazılmasın diye. Tanım plakayla
+ * BAŞLAMIYORSA metne dokunulmaz; aksi hâlde farklı biçimde kurulmuş bir tanımın
+ * ortasından parça silinebilirdi.
+ */
+export function riskTanimiPlakasiz(riskTanimi?: string, plaka?: string): string | undefined {
+  const tanim = riskTanimi?.trim();
+  if (!tanim || !plaka || !tanim.startsWith(plaka)) return tanim || undefined;
+  return tanim.slice(plaka.length).replace(/^\s*·\s*/, '').trim() || undefined;
+}

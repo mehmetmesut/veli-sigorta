@@ -7,7 +7,7 @@ import {
   ArrowLeft, CheckCircle2, Edit, FileText, Plus, ShieldCheck, History, X, Save,
 } from 'lucide-react';
 import type { Customer, InsuranceService, Policy, QuoteRequest } from '@/lib/types';
-import { formatTarih, formatTutar, kalanGun, musteriAdi } from '@/lib/police';
+import { formatTarih, formatTutar, kalanGun, musteriAdi, plakayiBul, riskTanimiPlakasiz } from '@/lib/police';
 import { bransKisaAd, bransRengi } from '@/lib/brans-renk';
 import { Bolum, MusteriBasligi, MusteriBilgiBloklari } from '@/components/admin/musteri-bilgi';
 import { KopyaDugmesi } from '@/components/admin/KopyaDugmesi';
@@ -35,30 +35,9 @@ function aktifMi(p: Policy, simdi: Date): boolean {
   return kalan === null || kalan >= 0;
 }
 
-/**
- * Poliçenin branş alanlarından plakayı çıkarır.
- *
- * Alan adları branş formundan geldiği için serbest metin; anahtar büyük/küçük
- * harf farkıyla yazılmış olabilir. Bulunamazsa `undefined` döner ve satır
- * eskisi gibi tek parça gösterilir.
- */
-function plakayiBul(bransAlanlari: Record<string, string> | undefined): string | undefined {
-  if (!bransAlanlari) return undefined;
-  const anahtar = Object.keys(bransAlanlari).find((k) => k.trim().toLocaleLowerCase('tr-TR') === 'plaka');
-  const deger = anahtar ? bransAlanlari[anahtar]?.trim() : '';
-  return deger || undefined;
-}
-
 function PoliceSatiri({ p }: { p: Policy }) {
   const plaka = plakayiBul(p.bransAlanlari);
-  // `riskTanimi` "07 MMY 68 · BYD SEAL U DM-İ (2025)" biçiminde kuruluyor.
-  // Plaka ayrı gösterileceği için baştaki kopyası ayıklanır; yoksa metne
-  // dokunulmaz ve plaka satırın başında ikinci kez yazılmış olmaz.
-  const tanim = p.riskTanimi?.trim();
-  const kalanTanim =
-    plaka && tanim?.startsWith(plaka)
-      ? tanim.slice(plaka.length).replace(/^\s*·\s*/, '').trim()
-      : tanim;
+  const kalanTanim = riskTanimiPlakasiz(p.riskTanimi, plaka);
 
   return (
     <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs">
