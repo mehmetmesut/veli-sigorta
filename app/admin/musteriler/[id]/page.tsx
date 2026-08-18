@@ -35,7 +35,31 @@ function aktifMi(p: Policy, simdi: Date): boolean {
   return kalan === null || kalan >= 0;
 }
 
+/**
+ * Poliçenin branş alanlarından plakayı çıkarır.
+ *
+ * Alan adları branş formundan geldiği için serbest metin; anahtar büyük/küçük
+ * harf farkıyla yazılmış olabilir. Bulunamazsa `undefined` döner ve satır
+ * eskisi gibi tek parça gösterilir.
+ */
+function plakayiBul(bransAlanlari: Record<string, string> | undefined): string | undefined {
+  if (!bransAlanlari) return undefined;
+  const anahtar = Object.keys(bransAlanlari).find((k) => k.trim().toLocaleLowerCase('tr-TR') === 'plaka');
+  const deger = anahtar ? bransAlanlari[anahtar]?.trim() : '';
+  return deger || undefined;
+}
+
 function PoliceSatiri({ p }: { p: Policy }) {
+  const plaka = plakayiBul(p.bransAlanlari);
+  // `riskTanimi` "07 MMY 68 · BYD SEAL U DM-İ (2025)" biçiminde kuruluyor.
+  // Plaka ayrı gösterileceği için baştaki kopyası ayıklanır; yoksa metne
+  // dokunulmaz ve plaka satırın başında ikinci kez yazılmış olmaz.
+  const tanim = p.riskTanimi?.trim();
+  const kalanTanim =
+    plaka && tanim?.startsWith(plaka)
+      ? tanim.slice(plaka.length).replace(/^\s*·\s*/, '').trim()
+      : tanim;
+
   return (
     <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs">
       <div className="flex items-center gap-2 flex-wrap">
@@ -63,7 +87,19 @@ function PoliceSatiri({ p }: { p: Policy }) {
         {p.sigortaSirketi} · {formatTarih(p.baslangicTarihi)} → {formatTarih(p.bitisTarihi)}
         {typeof p.brutPrim === 'number' && ` · ${formatTutar(p.brutPrim)} ${p.paraBirimi || 'TL'}`}
       </div>
-      {p.riskTanimi && <div className="text-slate-400 mt-0.5">{p.riskTanimi}</div>}
+      {(plaka || kalanTanim) && (
+        <div className="text-slate-400 mt-0.5 flex items-center gap-1 flex-wrap">
+          {plaka && (
+            <span className="inline-flex items-center gap-0.5">
+              {/* Plaka sigorta şirketi ekranlarına ve TRAMER sorgusuna elle
+                  yazılıyor; tek harf hatası sorguyu boş döndürüyor. */}
+              <span className="font-mono text-slate-600">{plaka}</span>
+              <KopyaDugmesi deger={plaka} etiket="Plaka" />
+            </span>
+          )}
+          {kalanTanim && <span>{plaka ? `· ${kalanTanim}` : kalanTanim}</span>}
+        </div>
+      )}
     </div>
   );
 }
