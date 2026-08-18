@@ -1,0 +1,40 @@
+node_modules/
+.next/
+out/
+coverage/
+.DS_Store
+*.log
+
+# Ortam değişkenleri — örnek dosya hariç
+.env*
+!.env.example
+
+# TypeScript artımlı derleme çıktısı
+*.tsbuildinfo
+
+# Yerel veritabanı ve yedekler (üretim verisi depoya girmemeli)
+*.db
+*.sqlite
+*.sqlite3
+*.sql.gz
+*velisigorta_db.json*
+
+# Dağıtım paketleri ve geçici dosyalar
+*.tar.gz
+*.tmp
+*.bak
+
+# Sunucu sırları. Yerelde boş ama üretimde .env, Google servis hesabı anahtarı ve
+# veritabanı dosyası burada duruyor — dizinin kendisi kapatılır ki ileride buraya
+# konan hiçbir dosya yanlışlıkla depoya girmesin.
+private/
+
+# Yerel araç durumu ve oturum günlükleri; projeye ait değil.
+.omc/
+.claude/settings.local.json
+
+# Üretilen görsellerin ham kaynakları ve deneme çıktıları
+.logo/
+.pexels/
+.uslup/
+.og-deneme/

@@ -1,0 +1,13 @@
+# Depoda satır sonu daima LF; çalışma kopyasında işletim sistemine bırakılır.
+# Windows'ta geliştirilip Linux sunucuda çalıştığı için bu sabitlenmezse her
+# dosya bir gün "tamamen değişmiş" görünür ve farklar okunamaz hâle gelir.
+* text=auto eol=lf
+
+# İkili dosyalar dönüştürülmemeli.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary

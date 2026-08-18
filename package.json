@@ -1,0 +1,43 @@
+{
+  "name": "ai-studio-applet",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "test": "tsx --test tests/police.test.ts tests/form-helpers.test.ts tests/service-options.test.ts tests/gorsel-varyant.test.ts tests/brans-renk.test.ts tests/musteri-arama.test.ts tests/turkce.test.ts tests/telefon.test.ts tests/sayfa-yetkisi.test.ts tests/gun-serisi.test.ts tests/kampanya-sirasi.test.ts",
+    "clean": "next clean",
+    "test:db": "tsx --test tests/superadmin.test.ts && tsx --test tests/permissions.test.ts && tsx --test tests/security.test.ts"
+  },
+  "dependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "autoprefixer": "^10.4.21",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.8",
+    "lucide-react": "^0.553.0",
+    "motion": "^12.23.24",
+    "mysql2": "^3.23.3",
+    "next": "^16.3.0",
+    "postcss": "^8.5.6",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "sanitize-html": "^2.17.6",
+    "sharp": "^0.35.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.1.11",
+    "@tailwindcss/typography": "^0.5.19",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/sanitize-html": "^2.16.1",
+    "eslint": "9.39.1",
+    "eslint-config-next": "16.3.0",
+    "tailwindcss": "4.1.11",
+    "tsx": "^4.23.12",
+    "typescript": "5.9.3"
+  }
+}
