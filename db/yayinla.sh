@@ -44,6 +44,13 @@ cp -r public "$HEDEF/.next/standalone/public"
 mkdir -p "$HEDEF/.next/standalone/.next"
 cp -r .next/static "$HEDEF/.next/standalone/.next/static"
 
+# Derleme önbelleği çalışma zamanında KULLANILMAZ (standalone kendi cache'ini
+# oluşturur) ve iki sebeple silinir:
+#  - sürüm başına ~90 MB yer kaplıyor,
+#  - derleme env yüklüyken koştuğu için ön-render sonucuyla birlikte
+#    SUPERADMIN_PASSWORD_HASH gibi gizli değerleri de önbelleğe alıyor.
+rm -rf .next/cache
+
 echo "==> Canlıya alınıyor"
 ln -sfn "$HEDEF/.next/standalone" "$KOK/app/current"
 systemctl restart velisigorta
