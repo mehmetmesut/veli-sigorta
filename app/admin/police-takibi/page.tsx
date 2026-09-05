@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Search, Plus, X, Save, Trash2, Edit, MessageCircle, AlertTriangle,
-  CheckCircle2, Filter, ArrowUpDown, FileSpreadsheet, CalendarClock, RefreshCw, Eye,
+  CheckCircle2, Filter, ArrowUpDown, FileSpreadsheet, CalendarClock, RefreshCw, Eye, UserPlus,
 } from 'lucide-react';
 import type { Customer, InsuranceService, Policy, PolicyStatus } from '@/lib/types';
 import { EXPIRY_FILTERS, VARSAYILAN_HATIRLATMA_METNI, aciliyet, filtreyeUyuyorMu, formatTarih, formatTutar, hatirlatmaMetniOlustur, kalanGun, musteriAdi, plakayiBul, riskTanimiPlakasiz, toWhatsAppNumber, whatsappBaglantisi } from '@/lib/police';
@@ -18,6 +18,7 @@ import { telefonAramasiEslesiyorMu } from '@/lib/telefon';
 import { Field, FieldRow, Section, inputCls } from '@/components/admin/form-ui';
 import { useModalErisilebilirlik } from '@/components/admin/useModalErisilebilirlik';
 import { MusteriSecici } from '@/components/admin/MusteriSecici';
+import { HizliMusteriFormu, eklendiMesaji } from '@/components/admin/HizliMusteriFormu';
 import { KopyaDugmesi } from '@/components/admin/KopyaDugmesi';
 import { WhatsAppReminderModal } from '@/components/admin/WhatsAppReminderModal';
 import { toSafeCsvCell } from '@/lib/csv';
@@ -82,7 +83,12 @@ const ACILIYET_STIL: Record<string, string> = {
   normal: 'bg-emerald-50 text-emerald-700',
 };
 
-export default function PolicyTrackingPage() {
+/**
+ * Sayfanın gövdesi. Varsayılan dışa aktarım DEĞİL: `useSearchParams` kullanan
+ * bileşen Suspense sınırı içinde olmak zorunda (Next.js ön-render kuralı),
+ * aksi hâlde derleme hata veriyor. Aynı kalıp `app/teklif-al/page.tsx` içinde de var.
+ */
+function PoliceTakibiIcerik() {
   const [policies, setPolicies] = useState<Policy[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [services, setServices] = useState<InsuranceService[]>([]);
@@ -92,16 +98,23 @@ export default function PolicyTrackingPage() {
   const [aktifFiltre, setAktifFiltre] = useState<string | null>(null);
   const [durumFiltre, setDurumFiltre] = useState<'tumu' | PolicyStatus>('tumu');
   /**
-   * Müşteriler sayfasından "?musteri=..." ile gelindiğinde o müşteriye odaklanır.
-   * Değer ilk render'da okunur; efekt içinde setState çağırmak gereksiz ikinci
-   * render'a yol açardı. Sunucu tarafında `window` olmadığı için boş başlar —
-   * admin sayfaları kimlik doğrulaması bitene kadar zaten render edilmez.
+   * Müşteri filtresi. Kaynağı ikili: adres çubuğundaki `?musteri=` ya da
+   * kullanıcının açılır listeden seçtiği değer.
+   *
+   * Adres `useSearchParams` ile okunur, `window.location.search` ile DEĞİL:
+   * istemci tarafı geçişte (`router.push`) bu bileşen, adres çubuğu yeni URL'e
+   * yazılmadan önce render olabiliyor ve ilk render'da okunan değer boş
+   * kalıyordu. Belirti sinsiydi — `yeni=1` efekt içinde okunduğu için form
+   * açılıyor ama müşteri seçili GELMİYORDU.
+   *
+   * Kullanıcı seçimi `null` olduğu sürece URL geçerli; bir kez seçim yapılınca
+   * (temizleme dâhil) onun değeri kazanır.
    */
-  const [musteriFiltre, setMusteriFiltre] = useState(() =>
-    typeof window === 'undefined'
-      ? ''
-      : new URLSearchParams(window.location.search).get('musteri') || '',
-  );
+  const aramaParametreleri = useSearchParams();
+  const urlMusterisi = aramaParametreleri.get('musteri') || '';
+  const [secilenMusteri, setSecilenMusteri] = useState<string | null>(null);
+  const musteriFiltre = secilenMusteri ?? urlMusterisi;
+  const setMusteriFiltre = (deger: string) => setSecilenMusteri(deger);
   const [sortKey, setSortKey] = useState<SortKey>('bitis');
   const [sortAsc, setSortAsc] = useState(true);
 
@@ -111,6 +124,12 @@ export default function PolicyTrackingPage() {
   /** Form açıldığındaki hâli; "değişiklik var mı?" karşılaştırması bunun üzerinden yapılır. */
   const [ilkHal, setIlkHal] = useState<string | null>(null);
   const [msg, setMsg] = useState('');
+
+  /**
+   * Poliçe formu içindeki hızlı müşteri ekleme paneli. `ad`, seçicide aranıp
+   * bulunamayan metin — forma ön doldurulur ki personel aynı ismi iki kez yazmasın.
+   */
+  const [hizliMusteri, setHizliMusteri] = useState<{ ad: string } | null>(null);
 
   // WhatsApp gönderim penceresi
   const [waPolicy, setWaPolicy] = useState<Policy | null>(null);
@@ -140,11 +159,11 @@ export default function PolicyTrackingPage() {
 
   useEffect(() => {
     let mounted = true;
-    // Müşteri detay sayfasındaki 'Yeni Poliçe' düğmesi '?musteri=<id>&yeni=1' ile
-    // gelir; form o müşteri seçili hâlde açılır ve personel seçimi tekrar yapmaz.
-    const yeniIstendi =
-      typeof window !== 'undefined' &&
-      new URLSearchParams(window.location.search).get('yeni') === '1';
+    // Müşteri kartındaki 'Yeni Poliçe' ve müşteri listesindeki 'Hızlıca poliçe
+    // ekle' düğmeleri '?musteri=<id>&yeni=1' ile gelir; form o müşteri seçili
+    // hâlde açılır ve personel seçimi tekrar yapmaz.
+    const yeniIstendi = aramaParametreleri.get('yeni') === '1';
+    const istenenMusteri = aramaParametreleri.get('musteri') || '';
 
     fetch('/api/admin/content?fields=customers,policies,services')
       .then((r) => (r.ok ? r.json() : null))
@@ -155,7 +174,9 @@ export default function PolicyTrackingPage() {
           setServices(data.services || []);
         }
         if (mounted) setLoading(false);
-        if (mounted && yeniIstendi) formuAc(bosPolice(musteriFiltre));
+        // `musteriFiltre` DEĞİL `istenenMusteri`: state güncellemesi bu kapanışa
+        // yansımaz, filtre değişkeni burada hâlâ eski (boş) değeri taşır.
+        if (mounted && yeniIstendi) formuAc(bosPolice(istenenMusteri));
       });
     return () => { mounted = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -371,6 +392,9 @@ export default function PolicyTrackingPage() {
     }
     setEditing(null);
     setIlkHal(null);
+    // Panel formla birlikte kapanır; yeniden açıldığında yarım kalmış bir
+    // müşteri girişiyle karşılaşılmasın.
+    setHizliMusteri(null);
   }
 
   /** Formu açan tek giriş noktası — karşılaştırma için ilk hâli de saklar. */
@@ -378,6 +402,7 @@ export default function PolicyTrackingPage() {
     setEditing(police);
     setIlkHal(JSON.stringify(police));
     setFormError('');
+    setHizliMusteri(null);
 
     // Süre kayıtta tutulmuyor; mevcut bir poliçe açılırken iki tarihten geri
     // çıkarılır. Çıkarılamıyorsa (tarihler bozuk ya da bitiş başlangıçtan önce)
@@ -793,6 +818,9 @@ export default function PolicyTrackingPage() {
                     deger={editing.musteriId}
                     onDegisim={(musteriId) => updateField({ musteriId })}
                     alanId="police-musteri"
+                    // Aranan kişi bulunamadığında akış burada kesiliyordu; artık
+                    // aynı yerden eklenip poliçeye devam ediliyor.
+                    onYeniMusteri={(sorgu) => setHizliMusteri({ ad: sorgu })}
                   />
                 </Field>
                 <Field label="Poliçe No" required ch={18}>
@@ -804,6 +832,35 @@ export default function PolicyTrackingPage() {
                   />
                 </Field>
               </FieldRow>
+
+              {/* Müşteri kayıtlı değilse: seçicinin boş sonucundan ya da bu
+                  düğmeden açılır, kaydedince yeni müşteri seçili hâle gelir ve
+                  poliçe girişi kaldığı yerden sürer. */}
+              {hizliMusteri ? (
+                <HizliMusteriFormu
+                  baslangicAdi={hizliMusteri.ad}
+                  kaydetEtiketi="Ekle ve Poliçeye Devam Et"
+                  onIptal={() => setHizliMusteri(null)}
+                  onEklendi={(musteri, liste) => {
+                    setCustomers(liste);
+                    updateField({ musteriId: musteri.id });
+                    setHizliMusteri(null);
+                    setMsg(eklendiMesaji(musteri));
+                    setTimeout(() => setMsg(''), 4000);
+                  }}
+                />
+              ) : (
+                !editing.musteriId && (
+                  <button
+                    type="button"
+                    onClick={() => setHizliMusteri({ ad: '' })}
+                    className="text-[11px] font-bold text-blue-800 hover:text-blue-950 inline-flex items-center gap-1.5"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    Müşteri kayıtlı değil mi? Hızlıca ekleyin
+                  </button>
+                )
+              )}
 
               {/* Şirket ve branş aynı satırda. Branş alanı en uzun seçeneğe
                   ("İhtiyari Mali Mesuliyet (İMM) Sigortası") göre ölçülür; şirket
@@ -841,26 +898,37 @@ export default function PolicyTrackingPage() {
                 </Field>
 
                 {/* Süre ve birimi tek bir alan sayılır; ikisi birlikte sütunu doldurur.
-                    Sayı kutusu esner, birim kutusu sabit kalır — "Gün"/"Yıl" kısa. */}
+                    Sayı kutusu esner, birim kutusu sabit kalır — "Gün"/"Yıl" kısa.
+
+                    GENİŞLİK SARMALAYICI `div`LERDE: `inputCls` içinde `w-full` var
+                    ve sınıf listesine `w-24` eklemek işe YARAMIYOR — Tailwind'de
+                    hangi genişliğin kazandığını sınıf sırası değil üretilen CSS
+                    sırası belirler. Bu yüzden birim kutusu 232 piksele çıkıp
+                    Bitiş Tarihi alanının 16 piksel üstüne biniyor, sayı kutusu da
+                    26 piksele eziliyordu. */}
                 <Field label="Süre" alanId="police-sure" hint="Bitiş tarihini belirler">
                   <div className="flex items-center gap-1.5">
-                    <input
-                      id="police-sure"
-                      type="number"
-                      min={1}
-                      value={sure}
-                      onChange={(e) => sureDegisti(Number(e.target.value), sureBirimi)}
-                      className={`${inputCls} flex-1 min-w-0`}
-                    />
-                    <select
-                      aria-label="Süre birimi"
-                      value={sureBirimi}
-                      onChange={(e) => sureDegisti(sure, e.target.value as SureBirimi)}
-                      className={`${inputCls} w-24 shrink-0`}
-                    >
-                      <option value="gun">Gün</option>
-                      <option value="yil">Yıl</option>
-                    </select>
+                    <div className="flex-1 min-w-0">
+                      <input
+                        id="police-sure"
+                        type="number"
+                        min={1}
+                        value={sure}
+                        onChange={(e) => sureDegisti(Number(e.target.value), sureBirimi)}
+                        className={inputCls}
+                      />
+                    </div>
+                    <div className="w-20 shrink-0">
+                      <select
+                        aria-label="Süre birimi"
+                        value={sureBirimi}
+                        onChange={(e) => sureDegisti(sure, e.target.value as SureBirimi)}
+                        className={inputCls}
+                      >
+                        <option value="gun">Gün</option>
+                        <option value="yil">Yıl</option>
+                      </select>
+                    </div>
                   </div>
                 </Field>
 
@@ -1026,4 +1094,12 @@ function ozetPrim(p: Policy): string {
 function ozetDetay(p: Policy): string {
   if (p.yenilemeMi) return 'yenileme';
   return p.durum;
+}
+
+export default function PolicyTrackingPage() {
+  return (
+    <Suspense fallback={<div className="text-xs font-bold text-slate-500">Yükleniyor...</div>}>
+      <PoliceTakibiIcerik />
+    </Suspense>
+  );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { ChevronDown, Search, X } from 'lucide-react';
+import { ChevronDown, Search, UserPlus, X } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { musteriAdi } from '@/lib/police';
 import { musterileriAra } from '@/lib/musteri-arama';
@@ -48,6 +48,15 @@ interface MusteriSeciciProps {
   temizlenebilir?: boolean;
   autoFocus?: boolean;
   className?: string;
+  /**
+   * Verildiğinde, arama sonuç vermediğinde listede "yeni müşteri ekle" düğmesi
+   * çıkar ve yazılan metinle çağrılır.
+   *
+   * Aranan kişinin kayıtlı olmadığı en net burada anlaşılıyor; personeli bu
+   * noktada boş bir sonuçla baş başa bırakmak, poliçe girişini kesip başka
+   * sayfaya göndermek demekti.
+   */
+  onYeniMusteri?: (sorgu: string) => void;
 }
 
 export function MusteriSecici({
@@ -60,6 +69,7 @@ export function MusteriSecici({
   temizlenebilir = false,
   autoFocus = false,
   className = '',
+  onYeniMusteri,
 }: MusteriSeciciProps) {
   const [acik, setAcik] = useState(false);
   const [sorgu, setSorgu] = useState('');
@@ -340,9 +350,32 @@ export function MusteriSecici({
           </ul>
 
           {bosSonuc && (
-            <p className="px-3 py-3 text-[11px] text-slate-500">
-              &ldquo;{sorgu}&rdquo; ile eşleşen müşteri yok.
-            </p>
+            <div className="px-3 py-3 space-y-2">
+              <p className="text-[11px] text-slate-500">
+                &ldquo;{sorgu}&rdquo; ile eşleşen müşteri yok.
+              </p>
+              {onYeniMusteri && (
+                /* `onMouseDown` kullanılır: girdinin blur'u `click`ten önce gelip
+                   listeyi kapatıyor ve tıklama düğmeye hiç ulaşmıyordu (seçenek
+                   satırlarıyla aynı sebep). Sorgu kapatmadan ÖNCE kopyalanır,
+                   `kapat()` onu sıfırlıyor. */
+                <button
+                  type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    const aranan = sorgu;
+                    kapat();
+                    onYeniMusteri(aranan);
+                  }}
+                  className="w-full px-3 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-[11px] font-bold inline-flex items-center justify-center gap-1.5"
+                >
+                  <UserPlus className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">
+                    {sorgu.trim() ? `“${sorgu.trim()}” adıyla yeni müşteri ekle` : 'Yeni müşteri ekle'}
+                  </span>
+                </button>
+              )}
+            </div>
           )}
 
           {kirpildi && (

@@ -3,8 +3,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
-  Search, Plus, X, Save, Trash2, Edit, User, Building2, Phone, Mail,
-  ShieldCheck, AlertCircle, CheckCircle2, UserPlus, Eye, MessageCircle,
+  Search, Plus, X, Save, User, Building2, Phone, Mail,
+  ShieldCheck, ShieldPlus, AlertCircle, CheckCircle2, UserPlus, Eye, MessageCircle,
 } from 'lucide-react';
 import type { CorporateContact, Customer, CustomerType, Policy } from '@/lib/types';
 import {
@@ -18,6 +18,7 @@ import { useModalErisilebilirlik } from '@/components/admin/useModalErisilebilir
 import { KopyaDugmesi, KopyalanabilirDeger } from '@/components/admin/KopyaDugmesi';
 import { bransKisaAd, bransRengi } from '@/lib/brans-renk';
 import { musteriEslesiyorMu } from '@/lib/musteri-arama';
+import { HizliMusteriFormu } from '@/components/admin/HizliMusteriFormu';
 
 /** Acente Antalya Kepez'de; yeni kayıtlarda il/ilçe hazır gelir, gerekirse değiştirilir. */
 const VARSAYILAN_IL = 'Antalya';
@@ -69,6 +70,8 @@ export default function CustomersPage() {
   const [search, setSearch] = useState('');
   const [tipFilter, setTipFilter] = useState<'tumu' | CustomerType>('tumu');
   const [editing, setEditing] = useState<Customer | null>(null);
+  /** Hızlı ekleme penceresi. Tam formdan ayrı: yalnız zorunlu alanları sorar. */
+  const [hizliAcik, setHizliAcik] = useState(false);
   const [msg, setMsg] = useState('');
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -275,25 +278,6 @@ export default function CustomersPage() {
     setTimeout(() => setMsg(''), 4000);
   };
 
-  const handleDelete = async (c: Customer) => {
-    const adet = policeSayisi.get(c.id) || 0;
-    if (adet > 0) {
-      alert(`Bu müşteriye bağlı ${adet} poliçe var. Önce poliçeleri silmeniz gerekiyor.`);
-      return;
-    }
-    if (!confirm(`"${musteriAdi(c)}" kaydını silmek istediğinizden emin misiniz?`)) return;
-
-    const res = await fetch('/api/admin/content?fields=customers,policies', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ entity: 'customers', action: 'delete', data: { id: c.id } }),
-    });
-    const body = await res.json().catch(() => ({}));
-    if (!res.ok) { alert(body.error || 'Silinemedi.'); return; }
-    setCustomers(body.customers || []);
-    loadData();
-  };
-
   const updateField = (patch: Partial<Customer>) =>
     setEditing((prev) => (prev ? { ...prev, ...patch } : prev));
 
@@ -404,12 +388,23 @@ export default function CustomersPage() {
             Bireysel ve kurumsal müşteri portföyü. Poliçeler bu kayıtlara bağlanır.
           </p>
         </div>
-        <button
-          onClick={() => formuAc(bosMusteri('bireysel'))}
-          className="px-4 py-2.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs inline-flex items-center gap-2"
-        >
-          <Plus className="w-4 h-4" /> Yeni Müşteri
-        </button>
+        {/* İki giriş yolu: "Hızlı" en az bilgiyle kaydedip poliçe akışına
+            geçirir, "Yeni Müşteri" tüm alanları olan tam formu açar. Birincil
+            eylem (tam form) sağda durur. */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setHizliAcik(true)}
+            className="px-4 py-2.5 rounded-xl bg-white border border-blue-800 text-blue-900 hover:bg-blue-50 font-bold text-xs inline-flex items-center gap-2"
+          >
+            <UserPlus className="w-4 h-4" /> Hızlı Müşteri Ekle
+          </button>
+          <button
+            onClick={() => formuAc(bosMusteri('bireysel'))}
+            className="px-4 py-2.5 rounded-xl bg-blue-900 hover:bg-blue-800 text-white font-bold text-xs inline-flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" /> Yeni Müşteri
+          </button>
+        </div>
       </div>
 
       {msg && (
@@ -621,19 +616,25 @@ export default function CustomersPage() {
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
+                          {/* Düzenle ikonu YOK: müşteri kartında zaten "Düzenle"
+                              düğmesi var ve satıra tıklamak da karta götürüyor.
+                              Listede üçüncü bir ikon, sütunu asıl işlerden
+                              (gözat, poliçe kes) uzaklaştırıyordu.
+
+                              Silme yerine poliçe kesme. Silme zaten poliçesi olan
+                              müşterilerde engelliydi (yabancı anahtar); günlük
+                              işte asıl gereken bu satırdan hızlıca poliçe
+                              açabilmek. */}
                           <button
-                            onClick={(e) => { e.stopPropagation(); formuAc(c); }}
-                            className="p-1.5 rounded-lg hover:bg-slate-200 text-slate-600"
-                            aria-label="Düzenle"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/admin/police-takibi?musteri=${c.id}&yeni=1`);
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-emerald-100 text-emerald-700"
+                            aria-label={`${musteriAdi(c)} için yeni poliçe oluştur`}
+                            title="Hızlıca poliçe ekle"
                           >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDelete(c); }}
-                            className="p-1.5 rounded-lg hover:bg-rose-100 text-rose-600"
-                            aria-label="Sil"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <ShieldPlus className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
@@ -646,6 +647,38 @@ export default function CustomersPage() {
         )}
       </div>
 
+
+      {/* Hızlı ekleme penceresi.
+          Kaydedince doğrudan poliçe akışına geçilir: bu düğmenin varlık sebebi
+          "müşteriyi kaydet, sonra poliçe kes" işini tek adıma indirmek. Yalnız
+          müşteri kaydı isteyen "Yeni Müşteri" tam formunu kullanır. */}
+      {hizliAcik && (
+        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-2xl w-full max-w-3xl my-8 shadow-2xl">
+            <div className="flex items-center justify-between p-5 border-b border-slate-200">
+              <h2 className="font-extrabold text-slate-900">Hızlı Müşteri Ekle</h2>
+              <button
+                type="button"
+                onClick={() => setHizliAcik(false)}
+                aria-label="Pencereyi kapat"
+                className="p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              <HizliMusteriFormu
+                kaydetEtiketi="Ekle ve Poliçe Oluştur"
+                onIptal={() => setHizliAcik(false)}
+                onEklendi={(musteri) => {
+                  setHizliAcik(false);
+                  router.push(`/admin/police-takibi?musteri=${musteri.id}&yeni=1`);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form */}
       {editing && (
