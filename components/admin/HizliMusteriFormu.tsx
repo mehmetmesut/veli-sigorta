@@ -6,6 +6,7 @@ import type { Customer, CorporateContact, CustomerType } from '@/lib/types';
 import { bicimlendirAd, bicimlendirSoyad, musteriAdi } from '@/lib/police';
 import { KAYDEDILMEMIS_UYARISI, adSoyadBicimlendir, degisiklikVarMi } from '@/lib/form-helpers';
 import { Field, FieldRow, inputCls } from './form-ui';
+import { CinsiyetSecici } from './CinsiyetSecici';
 
 /**
  * Hızlı müşteri ekleme formu.
@@ -254,6 +255,13 @@ export function HizliMusteriFormu({
               className={inputCls}
             />
           </Field>
+          {/* Hızlı panelde de sorulur: bu ekran poliçe kesme akışının içinde ve
+              müşteri kartına dönüp sonradan doldurmak pratikte olmuyordu. Zorunlu
+              değil — seçilmezse boş kaydedilir. */}
+          <CinsiyetSecici
+            deger={kayit.cinsiyet}
+            onDegisim={(cinsiyet) => guncelle({ cinsiyet })}
+          />
           <Field label="Mobil Telefon" ch={16}>
             <input
               type="tel"

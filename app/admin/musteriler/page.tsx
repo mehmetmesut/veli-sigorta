@@ -18,6 +18,7 @@ import { Field, FieldRow, Section, inputCls } from '@/components/admin/form-ui';
 import { useRouter } from 'next/navigation';
 import { useModalErisilebilirlik } from '@/components/admin/useModalErisilebilirlik';
 import { KopyaDugmesi, KopyalanabilirDeger } from '@/components/admin/KopyaDugmesi';
+import { CinsiyetSecici } from '@/components/admin/CinsiyetSecici';
 import { bransKisaAd, bransRengi } from '@/lib/brans-renk';
 import { musteriEslesiyorMu } from '@/lib/musteri-arama';
 import { HizliMusteriFormu } from '@/components/admin/HizliMusteriFormu';
@@ -751,6 +752,14 @@ export default function CustomersPage() {
                       className={inputCls}
                     />
                   </Field>
+                  {/* Cinsiyet ad/soyadın YANINDA duruyor, aşağıdaki katlı bölümde
+                      değil: "Devrim Deniz" gibi adlarda ayrım isim yazılırken
+                      yapılabilmeli. Katlı bölümde kaldığı sürece alan pratikte hiç
+                      doldurulmuyordu. */}
+                  <CinsiyetSecici
+                    deger={editing.cinsiyet}
+                    onDegisim={(cinsiyet) => updateField({ cinsiyet })}
+                  />
                   <Field label="Mobil Telefon" ch={17} hint="WhatsApp hatırlatmaları buraya gider">
                     <input
                       value={editing.mobilTelefon || ''}
@@ -801,13 +810,10 @@ export default function CustomersPage() {
                     <Field label="Doğum Tarihi" ch={10} tur="date">
                       <input type="date" value={editing.dogumTarihi || ''} onChange={(e) => updateField({ dogumTarihi: e.target.value })} className={inputCls} />
                     </Field>
-                    <Field label="Cinsiyeti" ch={7} tur="select">
-                      <select value={editing.cinsiyet || ''} onChange={(e) => updateField({ cinsiyet: e.target.value })} className={inputCls}>
-                        <option value="">Seçiniz</option>
-                        <option>Kadın</option>
-                        <option>Erkek</option>
-                      </select>
-                    </Field>
+                    {/* Cinsiyet buradan KALDIRILDI: artık ad/soyadın yanında, formun
+                        üst satırında. Aynı alan için iki ayrı denetim bırakmak, biri
+                        değiştirildiğinde diğerinin eski değeri gösterdiği izlenimini
+                        verirdi. */}
                     <Field label="Uyruğu" ch={14}>
                       <input value={editing.uyruk || ''} onChange={(e) => updateField({ uyruk: e.target.value })} className={inputCls} />
                     </Field>
@@ -1014,7 +1020,10 @@ function tcDurumu(deger: string | undefined): string {
 
 /** Katlı bölümlerin başlığında görünen özetler — bölüm açılmadan içeriği belli olur. */
 function ozetKisisel(c: Customer): string {
-  const dolu = [c.dogumTarihi, c.cinsiyet, c.uyruk, c.meslek, c.yabanciKimlikNo].filter(Boolean).length;
+  // `cinsiyet` bu özete GİRMEZ: alan artık formun üst satırında, bu katlı bölümün
+  // içinde değil. Sayılmaya devam etseydi bölüm kapalıyken "1 alan dolu" deyip
+  // açıldığında boş görünecekti.
+  const dolu = [c.dogumTarihi, c.uyruk, c.meslek, c.yabanciKimlikNo].filter(Boolean).length;
   return dolu > 0 ? `${dolu} alan dolu` : 'isteğe bağlı';
 }
 
