@@ -240,18 +240,24 @@ export function HizliMusteriFormu({
 
       {bireysel ? (
         <FieldRow>
-          <Field label="Adı" required ch={18}>
+          {/* Yazım kuralı alandan ÇIKARKEN uygulanır, yazarken değil: her tuşta
+              düzeltmek imleci oynatıp yazmayı bozuyor. Kayıt anında da ayrıca
+              uygulanır (bkz. `kaydet`) — alan hiç terk edilmeden Enter'a basılırsa
+              blur olayı hiç gerçekleşmiyor. Tam müşteri formundaki davranışın aynısı. */}
+          <Field label="Adı" required ch={18} hint="Kelimelerin ilk harfi büyütülür">
             <input
               autoFocus
               value={kayit.ad || ''}
               onChange={(e) => guncelle({ ad: e.target.value })}
+              onBlur={(e) => guncelle({ ad: bicimlendirAd(e.target.value) })}
               className={inputCls}
             />
           </Field>
-          <Field label="Soyadı" required ch={18}>
+          <Field label="Soyadı" required ch={18} hint="Tamamı büyük harfe çevrilir">
             <input
               value={kayit.soyad || ''}
               onChange={(e) => guncelle({ soyad: e.target.value })}
+              onBlur={(e) => guncelle({ soyad: bicimlendirSoyad(e.target.value) })}
               className={inputCls}
             />
           </Field>
@@ -336,10 +342,21 @@ export function HizliMusteriFormu({
               <div key={y.id} className="rounded-lg border border-slate-200 bg-white p-3">
                 <FieldRow>
                   <Field label="Adı" required ch={16}>
-                    <input value={y.ad} onChange={(e) => yetkiliGuncelle(y.id, { ad: e.target.value })} className={inputCls} />
+                    {/* Yetkili de bir kişi: aynı yazım kuralı geçerli. */}
+                    <input
+                      value={y.ad}
+                      onChange={(e) => yetkiliGuncelle(y.id, { ad: e.target.value })}
+                      onBlur={(e) => yetkiliGuncelle(y.id, { ad: bicimlendirAd(e.target.value) })}
+                      className={inputCls}
+                    />
                   </Field>
                   <Field label="Soyadı" required ch={16}>
-                    <input value={y.soyad} onChange={(e) => yetkiliGuncelle(y.id, { soyad: e.target.value })} className={inputCls} />
+                    <input
+                      value={y.soyad}
+                      onChange={(e) => yetkiliGuncelle(y.id, { soyad: e.target.value })}
+                      onBlur={(e) => yetkiliGuncelle(y.id, { soyad: bicimlendirSoyad(e.target.value) })}
+                      className={inputCls}
+                    />
                   </Field>
                   <Field label="Görev Unvanı" ch={18}>
                     <input value={y.gorevUnvani || ''} onChange={(e) => yetkiliGuncelle(y.id, { gorevUnvani: e.target.value })} className={inputCls} />

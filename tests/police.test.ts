@@ -303,3 +303,59 @@ test('müşteri adı yalnız ad alanlarını taşıyan özet kayıtla da çalı�
   assert.equal(musteriAdi({ tip: 'bireysel', ad: 'Mehmet Mesut', soyad: 'YILMAZ' }), 'Mehmet Mesut YILMAZ');
   assert.equal(musteriAdi({ tip: 'kurumsal', firmaUnvani: 'Işık Turizm A.Ş.' }), 'Işık Turizm A.Ş.');
 });
+
+// --- Ad/soyad yazim kurallarinin tam kapsami -------------------------------
+//
+// Kural hem alandan cikarken (onBlur) hem kayit aninda uygulaniyor. Bes maddenin
+// hepsi burada ayri ayri kilitli: bir tanesi sessizce bozulursa listede ayni kisi
+// iki farkli yazimla iki kez gorunmeye baslar.
+
+test('baştaki ve sondaki boşluklar kırpılır', () => {
+  assert.equal(bicimlendirAd('   mehmet mesut   '), 'Mehmet Mesut');
+  assert.equal(bicimlendirSoyad('   yılmaz   '), 'YILMAZ');
+});
+
+test('kelime arasındaki fazla boşluklar tek boşluğa iner', () => {
+  assert.equal(bicimlendirAd('ayşe    dilara'), 'Ayşe Dilara');
+  // Soyadında da geçerli: birleşik soyadlar iki kelime olabiliyor.
+  assert.equal(bicimlendirSoyad('yer    üstü'), 'YER ÜSTÜ');
+});
+
+test('adda her kelimenin yalnız ilk harfi büyük kalır', () => {
+  // Tamamı büyük yazılmış giriş de düzeltilir; yalnız ilk harfi büyütmek yetmez,
+  // kalanının küçültülmesi de gerekiyor.
+  assert.equal(bicimlendirAd('MEHMET MESUT'), 'Mehmet Mesut');
+  assert.equal(bicimlendirAd('mEhMeT'), 'Mehmet');
+});
+
+test('soyadın tamamı büyük olur', () => {
+  assert.equal(bicimlendirSoyad('Yılmaz'), 'YILMAZ');
+  assert.equal(bicimlendirSoyad('yÜzGeÇ'), 'YÜZGEÇ');
+});
+
+test('ş ğ ü ö ç harfleri her iki yönde de korunur', () => {
+  // Yerel ayarsız dönüşüm bu harfleri bozmaz ama ı/i ile birlikte tek kuralda
+  // toplandığı için burada da doğrulanır — biri değişirse hepsi değişir.
+  assert.equal(bicimlendirAd('ŞÜKRAN'), 'Şükran');
+  assert.equal(bicimlendirAd('çiğdem'), 'Çiğdem');
+  assert.equal(bicimlendirAd('ÖZGÜR'), 'Özgür');
+  assert.equal(bicimlendirSoyad('şengül'), 'ŞENGÜL');
+  assert.equal(bicimlendirSoyad('çöl'), 'ÇÖL');
+  assert.equal(bicimlendirSoyad('yağmur'), 'YAĞMUR');
+});
+
+test('noktalı ve noktasız i ayrımı her iki işlevde de korunur', () => {
+  // En kritik kural: düz toUpperCase() "işık"ı "ISIK" yapar, düz toLowerCase()
+  // "IŞIK"ı "işık" yapıp adı "İşık" olarak bozardı.
+  assert.equal(bicimlendirSoyad('ışık'), 'IŞIK');
+  assert.equal(bicimlendirSoyad('idris'), 'İDRİS');
+  assert.equal(bicimlendirAd('IRMAK'), 'Irmak');
+  assert.equal(bicimlendirAd('İDRİS'), 'İdris');
+});
+
+test('yalnız boşluktan oluşan giriş boş metne iner', () => {
+  // Kaydetmeyi engelleyen denetim bunu boş sayıp uyarı gösteriyor; işlevin
+  // kendisi de boş dönmeli ki veritabanına boşluk yazılmasın.
+  assert.equal(bicimlendirAd('    '), '');
+  assert.equal(bicimlendirSoyad('    '), '');
+});

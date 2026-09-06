@@ -909,11 +909,24 @@ export default function CustomersPage() {
                     {editing.yetkililer.map((y, i) => (
                       <div key={y.id} className="p-3 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
                         <FieldRow>
+                          {/* Yetkili de bir kişi: ad/soyad yazım kuralı burada da
+                              alandan çıkarken uygulanır, müşterinin kendi adında
+                              olduğu gibi. */}
                           <Field label="Adı" ch={22}>
-                            <input value={y.ad} onChange={(e) => updateYetkili(i, { ad: e.target.value })} className={inputCls} />
+                            <input
+                              value={y.ad}
+                              onChange={(e) => updateYetkili(i, { ad: e.target.value })}
+                              onBlur={(e) => updateYetkili(i, { ad: bicimlendirAd(e.target.value) })}
+                              className={inputCls}
+                            />
                           </Field>
                           <Field label="Soyadı" ch={18}>
-                            <input value={y.soyad} onChange={(e) => updateYetkili(i, { soyad: e.target.value })} className={inputCls} />
+                            <input
+                              value={y.soyad}
+                              onChange={(e) => updateYetkili(i, { soyad: e.target.value })}
+                              onBlur={(e) => updateYetkili(i, { soyad: bicimlendirSoyad(e.target.value) })}
+                              className={inputCls}
+                            />
                           </Field>
                           <Field label="Görev Unvanı" ch={20}>
                             <input value={y.gorevUnvani || ''} onChange={(e) => updateYetkili(i, { gorevUnvani: e.target.value })} className={inputCls} />
