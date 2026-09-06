@@ -475,18 +475,22 @@ export function HeroSlider({ campaigns = [], whatsappNumber, phone }: HeroSlider
         </div>
 
         {/* Controls & Indicator Dots */}
-        <div className="mt-8 pt-4 border-t border-[#E5E1DB] flex items-center justify-between">
+        <div className="mt-8 pt-4 border-t border-[#E5E1DB] flex flex-wrap items-center justify-between gap-y-3">
           {/* Indicator Dots
-              Noktalar görsel olarak 8 piksel kalır ama dokunma hedefi 44 pikseldir:
+              Noktalar görsel olarak 8 piksel kalır ama dokunma hedefi büyütülür:
               dış düğmeye şeffaf dolgu verilip nokta içeride <span> olarak çizilir.
-              Negatif dikey kenar boşluğu, büyüyen hedefin satır yüksekliğini
-              değiştirmesini engeller — yerleşim birebir aynı görünür. */}
-          <div className="flex items-center gap-0 -my-4">
+              Dolgu dar ekranda 32, geniş ekranda 40 pikseldir; 320 pikselde altı
+              nokta ile üç okun tek satıra sığmaması yüzünden ileri oku ekran dışında
+              kalıyordu. Negatif YATAY boşluk kaldırıldı: komşu düğmelerin tıklama
+              alanlarını 8 piksel üst üste bindirip yanlış slayta götürüyordu.
+              Negatif dikey boşluk, büyüyen hedefin satır yüksekliğini değiştirmesini
+              engeller — yerleşim birebir aynı görünür. */}
+          <div className="flex items-center gap-0 -my-3 sm:-my-4">
             {slides.map((_, idx) => (
               <button
                 key={idx}
                 onClick={() => setCurrentIndex(idx)}
-                className="p-4 -mx-1 flex items-center justify-center group/nokta"
+                className="p-3 sm:p-4 flex items-center justify-center group/nokta"
                 aria-label={`${idx + 1}. slayta git`}
                 aria-current={idx === currentIndex ? 'true' : undefined}
               >

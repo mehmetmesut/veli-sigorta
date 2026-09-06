@@ -738,7 +738,11 @@ export default function EntityRelationshipMapPage() {
                                         </div>
                                         <button
                                           onClick={() => toggleServiceBlogLink(srv.id, blog.id)}
-                                          className="text-slate-400 hover:text-rose-600 p-0.5"
+                                          /* Dolgu 2 pikselken tıklama alanı 16×16 kalıyordu:
+                                             bağlantıyı KALDIRAN bir düğme için fazla küçük,
+                                             dokunmatikte yanlışlıkla basılmaya açıktı. */
+                                          className="text-slate-400 hover:text-rose-600 p-1.5 rounded"
+                                          aria-label={`${blog.title} bağlantısını kaldır`}
                                           title="Bağlantıyı Kaldır"
                                         >
                                           <X className="w-3 h-3" />

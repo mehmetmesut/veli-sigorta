@@ -85,7 +85,7 @@ export function TelefonSatiri({
           rel="noopener noreferrer"
           aria-label={`${etiket} numarasına WhatsApp mesajı gönder`}
           title="WhatsApp'tan yaz"
-          className="p-1 rounded hover:bg-emerald-100 text-emerald-700"
+          className="p-1.5 rounded hover:bg-emerald-100 text-emerald-700"
         >
           <MessageCircle className="w-3.5 h-3.5" />
         </a>

@@ -7,9 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx --test tests/police.test.ts tests/form-helpers.test.ts tests/service-options.test.ts tests/gorsel-varyant.test.ts tests/brans-renk.test.ts tests/musteri-arama.test.ts tests/turkce.test.ts tests/telefon.test.ts tests/sayfa-yetkisi.test.ts tests/gun-serisi.test.ts tests/kampanya-sirasi.test.ts",
+    "test": "tsx --test tests/police.test.ts tests/form-helpers.test.ts tests/service-options.test.ts tests/gorsel-varyant.test.ts tests/brans-renk.test.ts tests/musteri-arama.test.ts tests/turkce.test.ts tests/telefon.test.ts tests/sayfa-yetkisi.test.ts tests/gun-serisi.test.ts tests/kampanya-sirasi.test.ts tests/test-kapsami.test.ts",
     "clean": "next clean",
-    "test:db": "tsx --test tests/superadmin.test.ts && tsx --test tests/permissions.test.ts && tsx --test tests/security.test.ts"
+    "test:db": "tsx --test tests/permissions.test.ts tests/security.test.ts tests/superadmin.test.ts"
   },
   "dependencies": {
     "@types/bcryptjs": "^3.0.0",

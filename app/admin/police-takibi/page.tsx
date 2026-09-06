@@ -622,27 +622,32 @@ function PoliceTakibiIcerik() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
+              {/* Sıralama düğmelerindeki `py-3 -my-3`: düğme yalnızca 10 piksellik
+                  başlık metnini sarmaladığı için tıklanabilir alan 13 piksel yüksekliğinde
+                  kalıyordu; hücrenin geri kalanı ölü alandı ve başlığa basan kullanıcının
+                  tıklaması çoğu zaman boşa gidiyordu. Dolgu hücre yüksekliğine yayar,
+                  negatif kenar boşluğu da bu büyümeyi geri alarak yerleşimi aynı bırakır. */}
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr className="text-left text-[10px] uppercase tracking-wider text-slate-500">
                   <th className="px-4 py-3">
-                    <button onClick={() => toggleSort('musteri')} className="inline-flex items-center gap-1 hover:text-slate-800">
+                    <button onClick={() => toggleSort('musteri')} className="inline-flex items-center gap-1 py-3 -my-3 hover:text-slate-800">
                       Müşteri <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
                   <th className="px-4 py-3">Poliçe</th>
                   <th className="px-4 py-3">
-                    <button onClick={() => toggleSort('baslangic')} className="inline-flex items-center gap-1 hover:text-slate-800">
+                    <button onClick={() => toggleSort('baslangic')} className="inline-flex items-center gap-1 py-3 -my-3 hover:text-slate-800">
                       Başlangıç <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
                   <th className="px-4 py-3">
-                    <button onClick={() => toggleSort('bitis')} className="inline-flex items-center gap-1 hover:text-slate-800">
+                    <button onClick={() => toggleSort('bitis')} className="inline-flex items-center gap-1 py-3 -my-3 hover:text-slate-800">
                       Bitiş <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
                   <th className="px-4 py-3">Kalan</th>
                   <th className="px-4 py-3">
-                    <button onClick={() => toggleSort('prim')} className="inline-flex items-center gap-1 hover:text-slate-800">
+                    <button onClick={() => toggleSort('prim')} className="inline-flex items-center gap-1 py-3 -my-3 hover:text-slate-800">
                       Brüt Prim <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>

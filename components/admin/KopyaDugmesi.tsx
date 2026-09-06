@@ -35,7 +35,10 @@ export function KopyaDugmesi({ deger, etiket }: { deger: string; etiket: string 
       onClick={kopyala}
       aria-label={`${etiket} değerini kopyala`}
       title={kopyalandi ? 'Kopyalandı' : `${etiket} kopyala`}
-      className={`p-1 rounded transition-colors ${
+      /* Dolgu 4 değil 6 piksel: 14 piksellik ikonla birlikte tıklama alanı 22×22'den
+         26×26'ya çıkar. WCAG 2.5.8 asgari 24×24 ister; dokunmatik ekranda 22 piksellik
+         hedef komşu satıra basılmasına yol açıyordu. */
+      className={`p-1.5 rounded transition-colors ${
         kopyalandi ? 'text-emerald-700 bg-emerald-100' : 'text-slate-400 hover:bg-slate-200 hover:text-slate-700'
       }`}
     >
