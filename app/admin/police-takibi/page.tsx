@@ -9,7 +9,8 @@ import {
 import type { Customer, InsuranceService, Policy, PolicyStatus } from '@/lib/types';
 import { EXPIRY_FILTERS, VARSAYILAN_HATIRLATMA_METNI, aciliyet, filtreyeUyuyorMu, formatTarih, formatTutar, hatirlatmaMetniOlustur, kalanGun, musteriAdi, plakayiBul, riskTanimiPlakasiz, toWhatsAppNumber, whatsappBaglantisi } from '@/lib/police';
 import {
-  birYilSonrasi, gecmisDegerler, komisyonHesapla, sureyiCikar, tarihEkle,
+  KAYDEDILMEMIS_UYARISI, birYilSonrasi, degisiklikVarMi, gecmisDegerler, komisyonHesapla,
+  sureyiCikar, tarihEkle,
   type SureBirimi,
 } from '@/lib/form-helpers';
 import { bransKisaAd, bransRengi } from '@/lib/brans-renk';
@@ -296,7 +297,15 @@ function PoliceTakibiIcerik() {
     if (!editing) return;
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { formuKapat(); return; }
+      if (e.key === 'Escape') {
+        // Katman katman kapanır. Odak hızlı müşteri panelinin İÇİNDEYSE olay zaten
+        // panelde durdurulur; buraya yalnız odak dışarıdayken (ör. Poliçe No alanı)
+        // ulaşır. O durumda da önce panel kapanmalı: tek Esc'te hem paneli hem
+        // poliçe formunu kapatmak, panele yazılmış müşteri bilgisini uyarısız siliyordu.
+        if (hizliMusteri) { setHizliMusteri(null); return; }
+        formuKapat();
+        return;
+      }
       if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         void kaydet(false);
@@ -305,8 +314,10 @@ function PoliceTakibiIcerik() {
 
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
+    // `hizliMusteri` bağımlılıkta ZORUNLU: olmazsa dinleyici eski kapanışla çalışır
+    // ve panel açıkken bile onu hiç göremez.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editing]);
+  }, [editing, hizliMusteri]);
 
   /** Form kapalıyken "/" aramaya odaklanır. */
   useEffect(() => {
@@ -386,10 +397,7 @@ function PoliceTakibiIcerik() {
    * Müşteri formundaki kalıbın aynısı.
    */
   function formuKapat() {
-    const kirli = ilkHal !== null && JSON.stringify(editing) !== ilkHal;
-    if (kirli && !confirm('Kaydedilmemiş değişiklikler var. Formu kapatmak istediğinizden emin misiniz?')) {
-      return;
-    }
+    if (degisiklikVarMi(ilkHal, editing) && !confirm(KAYDEDILMEMIS_UYARISI)) return;
     setEditing(null);
     setIlkHal(null);
     // Panel formla birlikte kapanır; yeniden açıldığında yarım kalmış bir

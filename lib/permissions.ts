@@ -43,6 +43,47 @@ export function isRestrictedEntity(entity: string): entity is RestrictedEntity {
   return (RESTRICTED_ENTITIES as readonly string[]).includes(entity);
 }
 
+// --- CRM verisi (müşteri kartı + poliçe) ------------------------------------
+
+/**
+ * CRM verisini görebilen roller.
+ *
+ * `MANAGER_ROLES`'ten AYRI tutulur: kısıtlı ayarlar sitenin teknik sahibine ait bir
+ * konuyken CRM acentenin günlük işidir ve personel bu ekranlarda çalışır. Liste
+ * bugünkü davranışı birebir korur — erişimi daraltmak isteyen YALNIZ bu satırdan
+ * rolü çıkarır, denetim API'de kendiliğinden uygulanır.
+ */
+const CRM_ROLES: readonly AdminRole[] = ['superadmin', 'admin', 'user'];
+
+/** `?fields=` ile istenen ve CRM verisi taşıyan alanlar. */
+export const CRM_FIELDS = ['customers', 'policies', 'policeSayilari'] as const;
+
+/** Müşteri ve poliçe kaydı yazan içerik türleri. */
+export const CRM_ENTITIES = ['customers', 'policies'] as const;
+
+/**
+ * Müşteri ve poliçe verisini okuma/yazma yetkisi var mı?
+ *
+ * NEDEN AYRI BİR YETKİ: bu koleksiyonlar T.C. kimlik numarası, vergi numarası ve
+ * komisyon tutarı taşıyor. Eskiden oturumu olan HER rol `?fields=customers,policies`
+ * ile tabloların tamamını indirebiliyordu; hangi ekranı açabildiğiyle hangi veriyi
+ * çekebildiği arasında hiçbir bağ yoktu. Bu fonksiyon o bağı kurar.
+ *
+ * `quotes` bilerek kapsam dışıdır: teklif kaydında kimlik numarası yoktur ve özet
+ * panel her rol için teklif çeker.
+ */
+export function canAccessCrm(role: AdminRole): boolean {
+  return CRM_ROLES.includes(role);
+}
+
+export function isCrmField(field: string): boolean {
+  return (CRM_FIELDS as readonly string[]).includes(field);
+}
+
+export function isCrmEntity(entity: string): boolean {
+  return (CRM_ENTITIES as readonly string[]).includes(entity);
+}
+
 // --- Sayfa erişimi ----------------------------------------------------------
 
 /**

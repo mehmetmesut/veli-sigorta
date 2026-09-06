@@ -11,7 +11,9 @@ import {
   bicimlendirAd, bicimlendirSoyad, musteriAdi, tcKimlikGecerliMi, formatTarih,
   whatsappBaglantisi,
 } from '@/lib/police';
-import { benzerMusteriBul, telefonMaskele } from '@/lib/form-helpers';
+import {
+  KAYDEDILMEMIS_UYARISI, benzerMusteriBul, degisiklikVarMi, telefonMaskele,
+} from '@/lib/form-helpers';
 import { Field, FieldRow, Section, inputCls } from '@/components/admin/form-ui';
 import { useRouter } from 'next/navigation';
 import { useModalErisilebilirlik } from '@/components/admin/useModalErisilebilirlik';
@@ -84,6 +86,13 @@ export default function CustomersPage() {
     dialogOzellikleri: musteriDialogOzellikleri,
     baslikId: musteriBaslikId,
   } = useModalErisilebilirlik<HTMLFormElement>(Boolean(editing));
+
+  // Hızlı ekleme penceresi ayrı bir kanca örneği kullanır: tam müşteri formuyla
+  // aynı anda hiç açılmıyor ama kanca kapalıyken dinleyici bağlamadığı için
+  // ikisinin bir arada durması zaten çakışma yaratmaz.
+  const {
+    ref: hizliRef, dialogOzellikleri: hizliDialog, baslikId: hizliBaslikId,
+  } = useModalErisilebilirlik<HTMLDivElement>(hizliAcik);
 
   const loadData = async () => {
     const res = await fetch('/api/admin/content?fields=customers,policies');
@@ -242,41 +251,9 @@ export default function CustomersPage() {
     void kaydet(false);
   };
 
-  /**
-   * Müşteriyi pasife alır veya yeniden aktifleştirir.
-   *
-   * Silme yerine pasife almak, poliçe geçmişi olan müşterilerde tek doğru yoldur:
-   * kayıt silinirse geçmiş poliçeler sahipsiz kalır (yabancı anahtar zaten engeller).
-   */
-  const durumDegistir = async (c: Customer) => {
-    const yeniDurum = !c.isActive;
-    const onay = yeniDurum
-      ? `"${musteriAdi(c)}" yeniden aktif hâle getirilsin mi?`
-      : `"${musteriAdi(c)}" pasife alınsın mı? Kayıt ve poliçeleri silinmez, yalnızca pasif işaretlenir.`;
-    if (!confirm(onay)) return;
-
-    setSaving(true);
-    const res = await fetch('/api/admin/content?fields=customers,policies', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entity: 'customers',
-        action: 'save',
-        data: { ...c, isActive: yeniDurum, updatedAt: c.updatedAt },
-      }),
-    });
-    const body = await res.json().catch(() => ({}));
-    setSaving(false);
-
-    if (!res.ok) {
-      alert(body.error || 'Durum değiştirilemedi.');
-      return;
-    }
-
-    setCustomers(body.customers || []);
-    setMsg(`${musteriAdi(c)} ${yeniDurum ? 'yeniden aktifleştirildi' : 'pasife alındı'}.`);
-    setTimeout(() => setMsg(''), 4000);
-  };
+  // Pasife alma/aktifleştirme buradan KALDIRILDI: kullanıcı İşlem sütununda yalnız
+  // iki ikon istediği (Göz At + Hızlıca Poliçe Ekle) için listeye düğme konmuyor.
+  // İşlem müşteri DETAY sayfasında yaşıyor; aynı mantığın iki kopyası tutulmuyor.
 
   const updateField = (patch: Partial<Customer>) =>
     setEditing((prev) => (prev ? { ...prev, ...patch } : prev));
@@ -287,11 +264,11 @@ export default function CustomersPage() {
    * Değişiklik yapılmışsa onay istenir.
    */
   const formuKapat = () => {
-    const kirli = ilkHal !== null && JSON.stringify(editing) !== ilkHal;
-    if (kirli && !confirm('Kaydedilmemiş değişiklikler var. Formu kapatmak istediğinizden emin misiniz?')) {
-      return;
-    }
+    if (degisiklikVarMi(ilkHal, editing) && !confirm(KAYDEDILMEMIS_UYARISI)) return;
     setEditing(null);
+    // Poliçe formuyla birebir aynı: ilk hâl de sıfırlanır, yoksa bir sonraki
+    // açılışta eski kaydın kıyası kalıyordu.
+    setIlkHal(null);
   };
 
 
@@ -654,9 +631,13 @@ export default function CustomersPage() {
           müşteri kaydı isteyen "Yeni Müşteri" tam formunu kullanır. */}
       {hizliAcik && (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-start justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl w-full max-w-3xl my-8 shadow-2xl">
+          <div
+            ref={hizliRef}
+            {...hizliDialog}
+            className="bg-white rounded-2xl w-full max-w-3xl my-8 shadow-2xl"
+          >
             <div className="flex items-center justify-between p-5 border-b border-slate-200">
-              <h2 className="font-extrabold text-slate-900">Hızlı Müşteri Ekle</h2>
+              <h2 id={hizliBaslikId} className="font-extrabold text-slate-900">Hızlı Müşteri Ekle</h2>
               <button
                 type="button"
                 onClick={() => setHizliAcik(false)}

@@ -26,6 +26,7 @@ import { tamAdBicimlendir, telefonMaskele } from '@/lib/form-helpers';
 import { metinAramasiEslesiyorMu } from '@/lib/turkce';
 import { telefonAramasiEslesiyorMu } from '@/lib/telefon';
 import { TeklifPolicelestir, type PolicelestirVerisi } from '@/components/admin/TeklifPolicelestir';
+import { useModalErisilebilirlik } from '@/components/admin/useModalErisilebilirlik';
 
 export default function QuotesCrmPage() {
   const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
@@ -34,6 +35,23 @@ export default function QuotesCrmPage() {
   const [statusFilter, setStatusFilter] = useState('Tümü');
   const [selectedQuote, setSelectedQuote] = useState<QuoteRequest | null>(null);
   const [newQuoteModal, setNewQuoteModal] = useState(false);
+
+  // İki ayrı pencere, iki ayrı kanca örneği. Kanca `acikMi` false iken hiçbir
+  // dinleyici bağlamadığı için aynı anda ikisinin bulunması çakışma yaratmaz.
+  //
+  // Kancaya `selectedQuote` DEĞİL, `Boolean(selectedQuote)` verilir: not alanına
+  // yazılırken `setSelectedQuote` her tuşta yeni nesne üretiyor; nesnenin kendisi
+  // bağımlılık olsaydı odak her harfte kapatma düğmesine sıçrardı.
+  //
+  // Kancanın sonucu NESNE olarak tutulmaz, alanlarına ayrılır: `detayModal.ref`
+  // biçimindeki erişimi react-hooks/refs kuralı "çizim sırasında ref okuma" sayıp
+  // hata veriyor.
+  const {
+    ref: detayRef, dialogOzellikleri: detayDialog, baslikId: detayBaslikId,
+  } = useModalErisilebilirlik<HTMLDivElement>(Boolean(selectedQuote));
+  const {
+    ref: yeniKayitRef, dialogOzellikleri: yeniKayitDialog, baslikId: yeniKayitBaslikId,
+  } = useModalErisilebilirlik<HTMLDivElement>(newQuoteModal);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
   const [msg, setMsg] = useState('');
   const [hata, setHata] = useState('');
@@ -470,13 +488,21 @@ export default function QuotesCrmPage() {
       {/* QUOTE DETAIL MODAL */}
       {selectedQuote && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 text-xs">
+          <div
+            ref={detayRef}
+            {...detayDialog}
+            className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-5 text-xs"
+          >
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
               <div>
                 <div className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Teklif Detay Kartı</div>
-                <h3 className="font-extrabold text-slate-900 text-lg">{selectedQuote.fullName}</h3>
+                <h3 id={detayBaslikId} className="font-extrabold text-slate-900 text-lg">{selectedQuote.fullName}</h3>
               </div>
-              <button onClick={() => setSelectedQuote(null)} className="text-slate-400 hover:text-slate-700">
+              <button
+                onClick={() => setSelectedQuote(null)}
+                aria-label="Teklif detayını kapat"
+                className="text-slate-400 hover:text-slate-700"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -559,10 +585,20 @@ export default function QuotesCrmPage() {
 
       {newQuoteModal && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-start sm:items-center justify-center p-4 z-50 overflow-y-auto">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs">
+          <div
+            ref={yeniKayitRef}
+            {...yeniKayitDialog}
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-xs"
+          >
             <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h3 className="font-extrabold text-slate-900 text-base">Manuel Müşteri Kaydı Ekle</h3>
-              <button onClick={() => setNewQuoteModal(false)} className="text-slate-400 hover:text-slate-700">
+              <h3 id={yeniKayitBaslikId} className="font-extrabold text-slate-900 text-base">
+                Manuel Müşteri Kaydı Ekle
+              </h3>
+              <button
+                onClick={() => setNewQuoteModal(false)}
+                aria-label="Pencereyi kapat"
+                className="text-slate-400 hover:text-slate-700"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>

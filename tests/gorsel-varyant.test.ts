@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
 import { srcSetUret, varyantOlabilirMi } from '../lib/gorsel-varyant';
 
@@ -29,4 +31,48 @@ test('srcset küçükten büyüğe tüm adayları içerir', () => {
 test('büyük harfli uzantı da tanınır', () => {
   // Adlandırmayı biz üretiyoruz ama elle düzenlenmiş kayıtlara karşı dayanıklı olsun.
   assert.equal(varyantOlabilirMi('/yuklenen/slider-abc-123.WEBP'), true);
+});
+
+// --- Yukleme ucu ile lib arasindaki sozlesme --------------------------------
+//
+// Varyant genislikleri iki yerde elle eslenirse (lib + yukleme ucu) ayrisma
+// derleme hatasi vermez; srcset diskte olmayan bir dosyayi adres gosterir ve
+// tarayici gorseli hic yukleyemez. Uc artik listeyi lib'den ICE AKTARIYOR;
+// bu test o baglantiyi kilitler.
+
+test('yükleme ucu varyant genişliklerini lib’den içe aktarır', () => {
+  const uc = fs.readFileSync(
+    path.join(import.meta.dirname, '..', 'app/api/admin/upload/route.ts'),
+    'utf8',
+  );
+
+  assert.match(uc, /import \{ VARYANT_GENISLIKLERI \} from '@\/lib\/gorsel-varyant'/);
+  // Kendi kopyasını yeniden tanımlamamalı.
+  assert.doesNotMatch(uc, /const VARYANT_GENISLIKLERI\s*=/);
+});
+
+test('ana dosya varyantlardan SONRA yazılır', () => {
+  // Ana dosyanın varlığı "varyantlar da hazır" anlamına gelir. Sıra bozulursa
+  // varyant hatasında diskte sahipsiz ana dosya kalır ve kullanıcı hata görür.
+  const uc = fs.readFileSync(
+    path.join(import.meta.dirname, '..', 'app/api/admin/upload/route.ts'),
+    'utf8',
+  );
+
+  const varyantYazimi = uc.indexOf('varyant.ad');
+  const anaYazim = uc.indexOf('path.join(hedefDizin, dosyaAdi), webp');
+
+  assert.ok(varyantYazimi > 0 && anaYazim > 0, 'yazma çağrıları bulunamadı');
+  assert.ok(varyantYazimi < anaYazim, 'ana dosya varyantlardan önce yazılıyor');
+});
+
+test('varyantlar ana çıktıdan türetilir, ham girdiden değil', () => {
+  // Ham girdiden türetilince yalnız genişlik sınırlanıyor; uzun oranlı görsellerde
+  // varyant ana dosyadan BÜYÜK çıkıyordu.
+  const uc = fs.readFileSync(
+    path.join(import.meta.dirname, '..', 'app/api/admin/upload/route.ts'),
+    'utf8',
+  );
+
+  assert.match(uc, /sharp\(webp, \{ failOn: 'error' \}\)/);
 });

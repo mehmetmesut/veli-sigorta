@@ -7,6 +7,7 @@ import { getCurrentAdmin } from '@/lib/auth';
 import { addAuditLog } from '@/lib/db';
 import { assertSameOrigin } from '@/lib/admin-content-validation';
 import { consumeRateLimit, getClientRateLimitKey } from '@/lib/rate-limit';
+import { VARYANT_GENISLIKLERI } from '@/lib/gorsel-varyant';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,11 +28,10 @@ const WEBP_KALITE = 82;
 /**
  * Dar ekranlar için üretilen ek genişlikler.
  *
- * Slider alanı mobilde ~360, tablette ~740 CSS piksel; iki katı alınarak yüksek
- * yoğunluklu ekranlarda da net kalması sağlanır. 1800 piksellik ana dosya zaten
- * üretiliyor, burada tekrarlanmaz.
+ * Liste `lib/gorsel-varyant.ts`ten İÇE AKTARILIR, burada tekrar yazılmaz: iki yerde
+ * elle eşlenen bir dizi ayrıştığında derleyici uyarmaz ve `srcset` diskte olmayan
+ * bir dosyayı adres gösterip görselin hiç yüklenmemesine yol açardı.
  */
-const VARYANT_GENISLIKLERI = [720, 1200] as const;
 
 // SVG kabul edilmez: rasterleştirilse bile kaynak dosya XSS taşıyabilir.
 const IZINLI_TIPLER = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
@@ -130,22 +130,37 @@ export async function POST(request: NextRequest) {
     const dosyaAdi = `slider-${kimlik}.webp`;
     const hedefDizin = getUploadDir();
     await fs.mkdir(hedefDizin, { recursive: true });
-    await fs.writeFile(path.join(hedefDizin, dosyaAdi), webp);
 
     // Dar ekranlar için küçük varyantlar. `next/image` bu yolu işleyemediği için
     // (nginx servis ediyor, Next sunucusu 404 veriyor) boyutlandırmayı yükleme
     // anında biz yapıyoruz; bileşen srcset ile tarayıcıya seçtiriyor.
     // Adlandırma düzeni sabittir: `<ad>-<genişlik>w.webp`.
-    await Promise.all(
-      VARYANT_GENISLIKLERI.map(async (genislik) => {
-        const varyant = await sharp(girdi, { failOn: 'error' })
-          .rotate()
+    //
+    // Varyantlar HAM GİRDİDEN değil, yukarıda üretilmiş `webp` çıktısından türetilir.
+    // Ham girdiden türetilince yalnız genişlik sınırlanıyordu; ana dosya ise hem
+    // genişlik hem YÜKSEKLİK kutusuna sığdırılıyor. Uzun oranlı bir görselde
+    // (ör. 900×2000) varyant ana dosyadan büyük çıkıyor, srcset küçük ekrana daha
+    // ağır dosya verdiriyordu. Ayrıca bir kez daha kod çözmek gerekmediği için hızlı.
+    const varyantlar = await Promise.all(
+      VARYANT_GENISLIKLERI.map(async (genislik) => ({
+        ad: `slider-${kimlik}-${genislik}w.webp`,
+        veri: await sharp(webp, { failOn: 'error' })
           .resize({ width: genislik, fit: 'inside', withoutEnlargement: true })
           .webp({ quality: WEBP_KALITE })
-          .toBuffer();
-        await fs.writeFile(path.join(hedefDizin, `slider-${kimlik}-${genislik}w.webp`), varyant);
-      }),
+          .toBuffer(),
+      })),
     );
+
+    for (const varyant of varyantlar) {
+      await fs.writeFile(path.join(hedefDizin, varyant.ad), varyant.veri);
+    }
+
+    // ANA DOSYA EN SON YAZILIR. Eskiden ilk yazılıyordu ve bir varyant hata verirse
+    // istek 500 dönüyordu: kullanıcı "yükleme başarısız" görüyor ama ana dosya diskte
+    // kalıyor, hiçbir kayıt ona işaret etmiyordu. Şimdi ana dosyanın varlığı
+    // "varyantları da hazır" demek — `srcSetUret` diskte olmayan bir adresi asla
+    // göstermez.
+    await fs.writeFile(path.join(hedefDizin, dosyaAdi), webp);
 
     const url = `/yuklenen/${dosyaAdi}`;
 
@@ -156,7 +171,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       url,
-      width: Math.min(bilgi.width, HEDEF_GENISLIK),
+      // Girdiden değil ÇIKTIDAN okunur: ana dosya hem genişlik hem yükseklik
+      // kutusuna sığdırıldığı için uzun oranlı görsellerde gerçek genişlik
+      // `min(girdi, 1800)` değildir (900×2000 girdi 382 piksel genişliğe iner).
+      // Panel bu değeri kullanıcıya "yüklendi: N piksel" diye gösteriyor.
+      width: (await sharp(webp).metadata()).width ?? Math.min(bilgi.width, HEDEF_GENISLIK),
       boyutKb: Math.round(webp.length / 1024),
     });
   } catch (error) {

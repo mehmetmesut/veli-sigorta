@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useId, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { MessageCircle, X, ExternalLink } from 'lucide-react';
 import type { Customer } from '@/lib/types';
 import { musteriAdi } from '@/lib/police';
+import { useModalErisilebilirlik } from './useModalErisilebilirlik';
 
 interface WhatsAppReminderModalProps {
   musteri: Customer | undefined;
@@ -25,13 +26,14 @@ interface WhatsAppReminderModalProps {
 export function WhatsAppReminderModal({
   musteri, sablon, onSablonChange, mesaj, link, onClose,
 }: WhatsAppReminderModalProps) {
-  const baslikId = useId();
-  const kapatRef = useRef<HTMLButtonElement>(null);
+  // Pencere yalnız açıkken çizildiği için kancaya sabit `true` verilir.
+  // Kanca ARIA özniteliklerini, açılış odağını, ODAK TUZAĞINI ve kapanışta odağın
+  // açan düğmeye iadesini üstlenir; bu bileşen eskiden yalnız ilk ikisini yapıyordu,
+  // Tab ile arka plandaki poliçe tablosuna çıkılabiliyordu.
+  const { ref, dialogOzellikleri, baslikId } = useModalErisilebilirlik<HTMLDivElement>(true);
 
-  /** Esc ile kapanır ve açılışta odak pencereye taşınır; odak arka plandaki tabloda kalmaz. */
+  /** Esc kancada DEĞİL burada: kapatma kararı pencereyi açan sayfaya ait. */
   useEffect(() => {
-    kapatRef.current?.focus();
-
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
@@ -42,16 +44,15 @@ export function WhatsAppReminderModal({
   return (
     <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-start sm:items-center justify-center p-4 overflow-y-auto">
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={baslikId}
+        ref={ref}
+        {...dialogOzellikleri}
         className="bg-white rounded-2xl w-full max-w-lg shadow-2xl my-8 sm:my-0"
       >
         <div className="flex items-center justify-between p-5 border-b border-slate-200">
           <h2 id={baslikId} className="font-extrabold text-slate-900 inline-flex items-center gap-2">
             <MessageCircle className="w-5 h-5 text-emerald-600" /> WhatsApp Hatırlatması
           </h2>
-          <button ref={kapatRef} onClick={onClose} aria-label="Pencereyi kapat" className="p-1.5 rounded-lg hover:bg-slate-100">
+          <button onClick={onClose} aria-label="Pencereyi kapat" className="p-1.5 rounded-lg hover:bg-slate-100">
             <X className="w-5 h-5" />
           </button>
         </div>

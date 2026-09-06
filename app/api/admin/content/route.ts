@@ -5,9 +5,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAdmin, kendiParolasiniDegistir, logoutAdmin, verifyAdminPassword } from '@/lib/auth';
 import { authKaydiniGuncelle, getDb, icerikOnbelleginiTemizle } from '@/lib/db';
 import {
+  canAccessCrm,
   canChangeAdminPassword,
   canManageRestrictedSettings,
   canManageUsers,
+  isCrmEntity,
+  isCrmField,
   isRestrictedEntity,
 } from '@/lib/permissions';
 import type { Customer, QuoteRequest, SiteSettings } from '@/lib/types';
@@ -230,6 +233,18 @@ export async function GET(req: NextRequest) {
     .filter(Boolean);
   const ister = (ad: string) => istenen.length === 0 || istenen.includes(ad);
 
+  // CRM koleksiyonları T.C. kimlik numarası, vergi numarası ve komisyon tutarı taşır.
+  // Ekranı açma yetkisi ile veriyi çekme yetkisi arasında bağ yoktu: oturumu olan her
+  // rol tabloların tamamını indirebiliyordu. Alanı sessizce çıkarmak yerine 403 dönülür
+  // — ayarlardaki maskeleme deseni orada doğruydu çünkü o ekran ilgili role salt
+  // görüntüleme olarak açık; burada boş liste, personele sebepsiz boş ekran gösterir.
+  if (istenen.some(isCrmField) && !canAccessCrm(current.role)) {
+    return NextResponse.json(
+      { error: 'Müşteri ve poliçe verisine erişim yetkiniz yok.' },
+      { status: 403 },
+    );
+  }
+
   const db = await getDb();
   const yanit: Record<string, unknown> = {};
 
@@ -277,6 +292,18 @@ async function handleContentPost(req: NextRequest): Promise<NextResponse> {
     if (isRestrictedEntity(entity) && !canManageRestrictedSettings(current.role)) {
       return NextResponse.json(
         { error: 'Bu bölümde değişiklik yapma yetkiniz yok. Yalnızca görüntüleyebilirsiniz.' },
+        { status: 403 },
+      );
+    }
+
+    // Yazma dalları yanıtta müşteri/poliçe listesinin TAMAMINI geri veriyor; yalnızca
+    // GET'i korumak veriyi POST üzerinden dışarı sızdırmaya devam ederdi.
+    // 'quotes' bütünüyle kapatılmaz — teklif ekranı her role açık; yalnız poliçe
+    // üreten 'policelestir' eylemi CRM sayılır.
+    const crmYazma = isCrmEntity(entity) || (entity === 'quotes' && action === 'policelestir');
+    if (crmYazma && !canAccessCrm(current.role)) {
+      return NextResponse.json(
+        { error: 'Müşteri ve poliçe kayıtlarında işlem yapma yetkiniz yok.' },
         { status: 403 },
       );
     }
@@ -665,7 +692,9 @@ async function handleContentPost(req: NextRequest): Promise<NextResponse> {
         await denetimKaydiEkle(
           current.email,
           'SAVE_CUSTOMER',
-          `Müşteri kaydedildi: ${kayit.musteriNo} (${kayit.tip})`,
+          // Aktiflik açıkça yazılır: pasife alma da bu uçtan geçiyor ve loga bakan
+          // kişi düz "kaydedildi" satırından bunu ayırt edemiyordu.
+          `Müşteri kaydedildi: ${kayit.musteriNo} (${kayit.tip}, ${kayit.isActive ? 'aktif' : 'PASİF'})`,
         );
         return NextResponse.json({ success: true, customers: await musterileriGetir() });
       }

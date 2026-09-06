@@ -4,6 +4,7 @@ import {
   adSoyadAyir,
   tamAdBicimlendir,
   benzerMusteriBul,
+  degisiklikVarMi,
   birYilSonrasi,
   gecmisDegerler,
   ilIlceAyir,
@@ -222,4 +223,41 @@ test('ülke kodlu ve sıfırlı girişler aynı biçime iner', () => {
   assert.equal(telefonMaskele('+90 530 730 20 02'), '0(530) 730 20 02');
   assert.equal(telefonMaskele('905307302002'), '0(530) 730 20 02');
   assert.equal(telefonMaskele('05307302002'), '0(530) 730 20 02');
+});
+
+// --- degisiklikVarMi: kaydedilmemis veri korumasinin cekirdegi ---------------
+//
+// Bu kiyas uc formda da (musteri, police, hizli musteri paneli) Esc'e basildiginda
+// uyari cikip cikmayacagini belirliyor. Yanlis pozitif personeli her kapatista
+// gereksiz onaya zorlar; yanlis negatif dakikalarca suren girisi sessizce siler.
+
+test('ilk hâl null iken değişiklik yok sayılır', () => {
+  // Form hiç açılmamışsa (ilk hâl saklanmamışsa) uyarı çıkmamalı.
+  assert.equal(degisiklikVarMi(null, { ad: 'Ali' }), false);
+});
+
+test('dokunulmamış form kirli sayılmaz', () => {
+  const kayit = { ad: 'Ali', soyad: 'YILMAZ', tip: 'bireysel' };
+
+  assert.equal(degisiklikVarMi(JSON.stringify(kayit), kayit), false);
+});
+
+test('tek alan değişince kirli olur', () => {
+  const ilk = JSON.stringify({ ad: 'Ali', soyad: 'YILMAZ' });
+
+  assert.equal(degisiklikVarMi(ilk, { ad: 'Ali', soyad: 'DEMİR' }), true);
+});
+
+test('boş bir alana yazmak da kirli sayılır', () => {
+  // Hızlı müşteri panelinde en sık durum: ön dolgunun yanına telefon yazılması.
+  const ilk = JSON.stringify({ ad: 'Ali', mobilTelefon: '' });
+
+  assert.equal(degisiklikVarMi(ilk, { ad: 'Ali', mobilTelefon: '0532' }), true);
+});
+
+test('Türkçe karakter değişimi yakalanır', () => {
+  // JSON kıyası olduğu için harf katlaması YAPILMAZ: "SAHIN" ile "ŞAHİN" ayrı.
+  const ilk = JSON.stringify({ soyad: 'SAHIN' });
+
+  assert.equal(degisiklikVarMi(ilk, { soyad: 'ŞAHİN' }), true);
 });

@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Building2, Plus, Trash2, User, UserPlus } from 'lucide-react';
 import type { Customer, CorporateContact, CustomerType } from '@/lib/types';
 import { bicimlendirAd, bicimlendirSoyad, musteriAdi } from '@/lib/police';
+import { KAYDEDILMEMIS_UYARISI, degisiklikVarMi } from '@/lib/form-helpers';
 import { Field, FieldRow, inputCls } from './form-ui';
 
 /**
@@ -74,6 +75,15 @@ export function HizliMusteriFormu({
   const [kayit, setKayit] = useState<Customer>(() => bosKayit(baslangicTipi, baslangicAdi));
   const [hata, setHata] = useState('');
   const [kaydediliyor, setKaydediliyor] = useState(false);
+
+  // Panel açıldığındaki hâl. Esc'te "bir şey yazılmış mı?" bunun üzerinden anlaşılır;
+  // aranıp bulunamayan addan gelen ön dolgu kirli sayılmaz, yalnız kullanıcının
+  // kendi yazdığı sayılır.
+  //
+  // `bosKayit` İKİNCİ KEZ ÇAĞRILMAZ: her çağrıda yeni `createdAt`/`updatedAt` üretir,
+  // o yüzden ikinci bir kayıtla kıyas paneli hiç dokunulmamışken bile kirli gösterirdi.
+  // Yukarıdaki durumun ilk değeri okunur.
+  const [ilkHal] = useState(() => JSON.stringify(kayit));
 
   const guncelle = (yama: Partial<Customer>) => setKayit((o) => ({ ...o, ...yama }));
 
@@ -167,6 +177,17 @@ export function HizliMusteriFormu({
    * için Enter dıştaki POLİÇE formunu gönderirdi.
    */
   function tusaBasildi(e: React.KeyboardEvent) {
+    // Esc YALNIZ bu paneli kapatır. Yayılım durdurulmazsa poliçe sayfası aynı Esc'i
+    // `window` üzerinden de yakalayıp poliçe formunu da kapatıyor; tek tuşta hem
+    // panele yazılan müşteri hem yarım kalan poliçe uçuyordu.
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      if (degisiklikVarMi(ilkHal, kayit) && !confirm(KAYDEDILMEMIS_UYARISI)) return;
+      onIptal();
+      return;
+    }
+
     if (e.key !== 'Enter') return;
     if ((e.target as HTMLElement).tagName === 'TEXTAREA') return;
     e.preventDefault();

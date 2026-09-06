@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "tsx --test tests/police.test.ts tests/form-helpers.test.ts tests/service-options.test.ts tests/gorsel-varyant.test.ts tests/brans-renk.test.ts tests/musteri-arama.test.ts tests/turkce.test.ts tests/telefon.test.ts tests/sayfa-yetkisi.test.ts tests/gun-serisi.test.ts tests/kampanya-sirasi.test.ts tests/test-kapsami.test.ts",
+    "test": "tsx --test tests/police.test.ts tests/form-helpers.test.ts tests/service-options.test.ts tests/gorsel-varyant.test.ts tests/brans-renk.test.ts tests/musteri-arama.test.ts tests/turkce.test.ts tests/telefon.test.ts tests/sayfa-yetkisi.test.ts tests/gun-serisi.test.ts tests/kampanya-sirasi.test.ts tests/crm-yetkisi.test.ts tests/musteri-durum.test.ts tests/modal-erisilebilirlik.test.ts tests/test-kapsami.test.ts",
     "clean": "next clean",
     "test:db": "tsx --test tests/permissions.test.ts tests/security.test.ts tests/superadmin.test.ts"
   },

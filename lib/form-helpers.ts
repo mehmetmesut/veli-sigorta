@@ -236,3 +236,21 @@ export function gecmisDegerler<T>(kayitlar: readonly T[], sec: (kayit: T) => str
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'tr-TR'))
     .map(([deger]) => deger);
 }
+
+/**
+ * Kaydedilmemiş veri uyarısı; üç formda da aynı cümle çıksın diye tek yerde.
+ */
+export const KAYDEDILMEMIS_UYARISI =
+  'Kaydedilmemiş değişiklikler var. Formu kapatmak istediğinizden emin misiniz?';
+
+/**
+ * Form açılış hâlinden bu yana değişiklik yapıldı mı?
+ *
+ * Alan alan "değişti" bayrağı yerine açılış hâlinin JSON kıyası kullanılır: otuzdan
+ * fazla alanı olan kurumsal müşteri formunda her alana ayrı bayrak koymak, eklenen
+ * yeni alanın unutulması demekti. `confirm` burada ÇAĞRILMAZ — bu dosya tarayıcısız
+ * node testlerinde de koşuyor, saf kalmalı.
+ */
+export function degisiklikVarMi(ilkHal: string | null, simdiki: unknown): boolean {
+  return ilkHal !== null && JSON.stringify(simdiki) !== ilkHal;
+}

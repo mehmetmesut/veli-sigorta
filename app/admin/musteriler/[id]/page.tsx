@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   ArrowLeft, CheckCircle2, Edit, FileText, Plus, ShieldCheck, History, X, Save,
+  UserCheck, UserX,
 } from 'lucide-react';
 import type { Customer, InsuranceService, Policy, QuoteRequest } from '@/lib/types';
 import { formatTarih, formatTutar, kalanGun, musteriAdi, plakayiBul, riskTanimiPlakasiz } from '@/lib/police';
 import { bransKisaAd, bransRengi } from '@/lib/brans-renk';
-import { Bolum, MusteriBasligi, MusteriBilgiBloklari } from '@/components/admin/musteri-bilgi';
+import { MusteriBasligi, MusteriBilgiBloklari } from '@/components/admin/musteri-bilgi';
+import { durumBildirimi, durumOnayMetni } from '@/lib/musteri-durum';
 import { KopyaDugmesi } from '@/components/admin/KopyaDugmesi';
 import { Field, FieldRow, inputCls } from '@/components/admin/form-ui';
 import { useModalErisilebilirlik } from '@/components/admin/useModalErisilebilirlik';
@@ -244,6 +246,48 @@ export default function CustomerDetailPage() {
     setTimeout(() => setMsg(''), 5000);
   }
 
+  /**
+   * Müşteriyi pasife alır ya da yeniden aktifleştirir.
+   *
+   * Silme yerine pasiflik: poliçesi olan müşteri zaten silinemiyor (bağlı poliçe
+   * varsa uç 409 döner) ve silinseydi poliçe geçmişi sahipsiz kalırdı. Pasiflik
+   * yalnızca bir işarettir — kayıt listelerde ve müşteri seçicide görünmeye devam
+   * eder, hiçbir veri kaybolmaz.
+   */
+  async function durumDegistir() {
+    if (!musteri) return;
+
+    const yeniDurum = !musteri.isActive;
+    if (!confirm(durumOnayMetni(musteriAdi(musteri), yeniDurum, aktifPoliceler.length))) return;
+
+    setSaving(true);
+    setHata('');
+
+    const res = await fetch('/api/admin/content?fields=customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        entity: 'customers',
+        action: 'save',
+        // `updatedAt` sayfayı açtığımızdaki sürümdür ve KORUNUR: sunucu bununla
+        // "ben bakarken başkası değiştirdi mi?" çakışma denetimini yapıyor.
+        // Yenisiyle ezilseydi o denetim sessizce işlevsizleşirdi.
+        data: { ...musteri, isActive: yeniDurum },
+      }),
+    });
+    const govde = await res.json().catch(() => ({}));
+    setSaving(false);
+
+    if (!res.ok) {
+      setHata(govde.error || 'Müşteri durumu değiştirilemedi.');
+      return;
+    }
+
+    setCustomers(govde.customers || []);
+    setMsg(durumBildirimi(musteriAdi(musteri), yeniDurum));
+    setTimeout(() => setMsg(''), 4000);
+  }
+
   if (loading) return <div className="text-xs font-bold text-slate-500">Yükleniyor…</div>;
 
   if (!musteri) {
@@ -306,9 +350,33 @@ export default function CustomerDetailPage() {
 
         <div className="p-5 space-y-5">
           <MusteriBilgiBloklari musteri={musteri} />
-          <p className="text-[11px] text-slate-400">
-            Oluşturma: {formatTarih(musteri.createdAt)} · Son güncelleme: {formatTarih(musteri.updatedAt)}
-          </p>
+
+          {/* Kayıt künyesi ve kaydın kendi durumu. Pasife alma üstteki günlük iş
+              düğmelerinin (Teklif Ver / Yeni Poliçe / Düzenle) yanına KONMAZ: nadir
+              kullanılır ve yanlış tıklanırsa müşteri tüm listelerde "Pasif" görünür.
+              Künye satırı tasarımda "kayıt hakkında" bölgesidir; düğme de çerçeveli
+              bırakılarak üstteki dolu düğmelerin altında ikincil kalır. */}
+          <div className="flex items-center justify-between gap-3 flex-wrap pt-1">
+            <p className="text-[11px] text-slate-400">
+              Oluşturma: {formatTarih(musteri.createdAt)} · Son güncelleme: {formatTarih(musteri.updatedAt)}
+            </p>
+            <button
+              type="button"
+              onClick={() => void durumDegistir()}
+              disabled={saving}
+              className={`px-3.5 py-2 rounded-xl bg-white border font-bold text-xs inline-flex items-center gap-2 disabled:opacity-60 ${
+                musteri.isActive
+                  ? 'border-rose-200 text-rose-700 hover:bg-rose-50'
+                  : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              {musteri.isActive ? (
+                <><UserX className="w-4 h-4" /> Pasife Al</>
+              ) : (
+                <><UserCheck className="w-4 h-4" /> Aktife Al</>
+              )}
+            </button>
+          </div>
         </div>
       </div>
 
