@@ -184,6 +184,27 @@ export function adSoyadAyir(tamAd: string | undefined | null): { ad: string; soy
 }
 
 /**
+ * Tam addan yazım kuralına UYGUN ad ve soyad üretir.
+ *
+ * NEDEN AYRI: Ad/soyad biçimlendirmesi eskiden yalnız KAYDETME anında uygulanıyordu.
+ * Hızlı müşteri paneli, seçicide aranıp bulunamayan metni alanlara ön doldururken bu
+ * kuraldan geçirmiyor; personel "deneme amaçlı test" yazdığında alanlarda ham metni
+ * görüyor, kayıttan sonra ise "Deneme Amaçlı / TEST" oluyordu. Ekranda görünen ile
+ * kaydedilecek olanın farklı olması, doğru yazılmış bir kaydı yanlış sanıp elle
+ * "düzeltmeye" yol açıyordu.
+ *
+ * Ayırma kuralı `adSoyadAyir` ile aynıdır (son kelime soyad, tek kelime yalnız ad).
+ */
+export function adSoyadBicimlendir(tamAd: string | undefined | null): { ad: string; soyad: string } {
+  const { ad, soyad } = adSoyadAyir(tamAd);
+
+  return {
+    ad: ad ? bicimlendirAd(ad) : '',
+    soyad: soyad ? bicimlendirSoyad(soyad) : '',
+  };
+}
+
+/**
  * Tek satırlık ad soyadı, müşteri kartındaki yazım kuralına göre biçimlendirir:
  * ad yalnızca baş harfleri büyük, soyad tamamen büyük ("mehmet mesut yılmaz" →
  * "Mehmet Mesut YILMAZ").

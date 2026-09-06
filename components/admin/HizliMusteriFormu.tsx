@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { Building2, Plus, Trash2, User, UserPlus } from 'lucide-react';
 import type { Customer, CorporateContact, CustomerType } from '@/lib/types';
 import { bicimlendirAd, bicimlendirSoyad, musteriAdi } from '@/lib/police';
-import { KAYDEDILMEMIS_UYARISI, degisiklikVarMi } from '@/lib/form-helpers';
+import { KAYDEDILMEMIS_UYARISI, adSoyadBicimlendir, degisiklikVarMi } from '@/lib/form-helpers';
 import { Field, FieldRow, inputCls } from './form-ui';
 
 /**
@@ -40,17 +40,22 @@ interface HizliMusteriFormuProps {
 /** Poliçe kesmek için yeterli en az bilgi; kalanı müşteri kartından tamamlanır. */
 function bosKayit(tip: CustomerType, baslangicAdi: string): Customer {
   const now = new Date().toISOString();
-  const parcalar = baslangicAdi.trim().split(/\s+/).filter(Boolean);
   const bireysel = tip === 'bireysel';
+
+  // Bireyselde SON kelime soyad sayılır: "mehmet mesut yılmaz" → ad "Mehmet Mesut",
+  // soyad "YILMAZ". Tek kelime yazılmışsa ad kabul edilir, soyad uydurulmaz.
+  //
+  // Ön dolgu, kaydetmede uygulanan yazım kuralından GEÇİRİLEREK yerleştirilir:
+  // ham metin bırakıldığında alanlarda görünen ile kaydedilecek olan farklı oluyor,
+  // personel doğru yazılmış kaydı yanlış sanıp elle düzeltmeye kalkıyordu.
+  const { ad, soyad } = adSoyadBicimlendir(baslangicAdi);
 
   return {
     id: '',
     musteriNo: '',
     tip,
-    // Bireyselde SON kelime soyad sayılır: "Mehmet Mesut Yılmaz" → ad
-    // "Mehmet Mesut", soyad "Yılmaz". Tek kelime yazılmışsa ad kabul edilir.
-    ad: bireysel && parcalar.length > 0 ? parcalar.slice(0, -1).join(' ') || parcalar[0] : undefined,
-    soyad: bireysel && parcalar.length > 1 ? parcalar[parcalar.length - 1] : undefined,
+    ad: bireysel && ad ? ad : undefined,
+    soyad: bireysel && soyad ? soyad : undefined,
     firmaUnvani: !bireysel ? baslangicAdi.trim() || undefined : undefined,
     il: 'Antalya',
     ilce: 'Kepez',

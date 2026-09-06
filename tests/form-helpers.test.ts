@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   adSoyadAyir,
+  adSoyadBicimlendir,
   tamAdBicimlendir,
   benzerMusteriBul,
   degisiklikVarMi,
@@ -260,4 +261,67 @@ test('Türkçe karakter değişimi yakalanır', () => {
   const ilk = JSON.stringify({ soyad: 'SAHIN' });
 
   assert.equal(degisiklikVarMi(ilk, { soyad: 'ŞAHİN' }), true);
+});
+
+// --- adSoyadBicimlendir: hizli musteri panelinin on dolgusu -----------------
+//
+// Panel, secicide aranip bulunamayan metni Adi/Soyadi alanlarina yerlestiriyor.
+// Bicimlendirme eskiden yalniz KAYDETME aninda uygulaniyordu: ekranda "deneme
+// amacli test" gorunuyor, kayitta "Deneme Amacli / TEST" oluyordu. Ekranda gorunen
+// ile kaydedilecek olanin farkli olmasi, dogru yazilmis kaydi yanlis sanip elle
+// duzeltmeye yol aciyordu.
+
+test('ön dolgu ad ilk harfleri büyük, soyad tamamı büyük gelir', () => {
+  assert.deepEqual(
+    adSoyadBicimlendir('deneme amaçlı test'),
+    { ad: 'Deneme Amaçlı', soyad: 'TEST' },
+  );
+});
+
+test('Türkçe harfler doğru dönüşür', () => {
+  // ı→I ve i→İ: yerel ayarsız dönüşüm "Işık"ı "ışık" yerine "IŞIK" yapıp
+  // "Isık" gibi bozuk yazımlar üretiyordu.
+  assert.deepEqual(
+    adSoyadBicimlendir('ışık yıldırım'),
+    { ad: 'Işık', soyad: 'YILDIRIM' },
+  );
+  // Noktalı i büyürken noktasını korur: "ibrahim" → "İbrahim", "Ibrahim" değil.
+  assert.deepEqual(
+    adSoyadBicimlendir('ibrahim şahin'),
+    { ad: 'İbrahim', soyad: 'ŞAHİN' },
+  );
+});
+
+test('tamamı büyük yazılmış giriş de düzeltilir', () => {
+  // Personel Caps Lock açık yazdığında ad "MEHMET MESUT" kalıyordu.
+  assert.deepEqual(
+    adSoyadBicimlendir('MEHMET MESUT YILMAZ'),
+    { ad: 'Mehmet Mesut', soyad: 'YILMAZ' },
+  );
+});
+
+test('tek kelimede soyadı uydurulmaz', () => {
+  assert.deepEqual(adSoyadBicimlendir('mehmet'), { ad: 'Mehmet', soyad: '' });
+});
+
+test('boş girdi boş sonuç verir', () => {
+  assert.deepEqual(adSoyadBicimlendir(''), { ad: '', soyad: '' });
+  assert.deepEqual(adSoyadBicimlendir(undefined), { ad: '', soyad: '' });
+  assert.deepEqual(adSoyadBicimlendir('   '), { ad: '', soyad: '' });
+});
+
+test('fazla boşluklar tek boşluğa iner', () => {
+  assert.deepEqual(
+    adSoyadBicimlendir('  ayşe   dilara   yüzgeç  '),
+    { ad: 'Ayşe Dilara', soyad: 'YÜZGEÇ' },
+  );
+});
+
+test('ikinci kez uygulanınca sonuç değişmez', () => {
+  // Müşteri tipi bireysel↔kurumsal değiştirildiğinde yazılan ad yeniden bu
+  // işlevden geçiyor; kararsız olsaydı her geçişte yazım bozulurdu.
+  const birinci = adSoyadBicimlendir('deneme amaçlı test');
+  const ikinci = adSoyadBicimlendir(`${birinci.ad} ${birinci.soyad}`);
+
+  assert.deepEqual(ikinci, birinci);
 });
