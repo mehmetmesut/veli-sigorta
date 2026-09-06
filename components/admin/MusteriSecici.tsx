@@ -149,6 +149,18 @@ export function MusteriSecici({
     girdiRef.current?.focus();
   }
 
+  /**
+   * "Yeni müşteri ekle" eylemi.
+   *
+   * Sorgu kapatmadan ÖNCE kopyalanır: `kapat()` onu sıfırlıyor ve çağıran taraf
+   * aranan adı ön dolgu olarak kullanıyor.
+   */
+  function yeniMusteriyeGec() {
+    const aranan = sorgu;
+    kapat();
+    onYeniMusteri?.(aranan);
+  }
+
   function tusaBasildi(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -355,18 +367,24 @@ export function MusteriSecici({
                 &ldquo;{sorgu}&rdquo; ile eşleşen müşteri yok.
               </p>
               {onYeniMusteri && (
-                /* `onMouseDown` kullanılır: girdinin blur'u `click`ten önce gelip
-                   listeyi kapatıyor ve tıklama düğmeye hiç ulaşmıyordu (seçenek
-                   satırlarıyla aynı sebep). Sorgu kapatmadan ÖNCE kopyalanır,
-                   `kapat()` onu sıfırlıyor. */
+                /* İKİ olay birden dinlenir; ikisi de gereklidir:
+                   - `onMouseDown`: girdinin blur'u `click`ten önce gelip listeyi
+                     kapatıyor ve tıklama düğmeye hiç ulaşmıyordu (seçenek
+                     satırlarıyla aynı sebep).
+                   - `onClick`: klavyeyle etkinleştirmede (Enter/Space) tarayıcı
+                     `mousedown` ÜRETMEZ, yalnız `click` gönderir. Tek başına
+                     `onMouseDown` bırakıldığında düğme klavye kullanıcısına
+                     tümüyle kapalıydı; `mousedown`ın herhangi bir sebeple
+                     ulaşmadığı her durumda da düğme ölü kalıyordu.
+                   Fare yolunda liste zaten `mousedown` sırasında kapandığı için
+                   `click` düğmeye ulaşamaz; ulaşsa bile işlem aynı sonucu verir. */
                 <button
                   type="button"
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    const aranan = sorgu;
-                    kapat();
-                    onYeniMusteri(aranan);
+                    yeniMusteriyeGec();
                   }}
+                  onClick={yeniMusteriyeGec}
                   className="w-full px-3 py-2 rounded-lg bg-blue-800 hover:bg-blue-900 text-white text-[11px] font-bold inline-flex items-center justify-center gap-1.5"
                 >
                   <UserPlus className="w-3.5 h-3.5 shrink-0" />
