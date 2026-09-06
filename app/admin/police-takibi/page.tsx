@@ -7,7 +7,7 @@ import {
   CheckCircle2, Filter, ArrowUpDown, FileSpreadsheet, CalendarClock, RefreshCw, Eye, UserPlus,
 } from 'lucide-react';
 import type { Customer, InsuranceService, Policy, PolicyStatus } from '@/lib/types';
-import { EXPIRY_FILTERS, VARSAYILAN_HATIRLATMA_METNI, aciliyet, filtreyeUyuyorMu, formatTarih, formatTutar, hatirlatmaMetniOlustur, kalanGun, musteriAdi, plakayiBul, riskTanimiPlakasiz, toWhatsAppNumber, whatsappBaglantisi } from '@/lib/police';
+import { ACILIYET_STIL, EXPIRY_FILTERS, VARSAYILAN_HATIRLATMA_METNI, aciliyet, filtreyeUyuyorMu, formatTarih, formatTutar, hatirlatmaMetniOlustur, kalanGun, musteriAdi, plakayiBul, riskTanimiPlakasiz, toWhatsAppNumber, whatsappBaglantisi } from '@/lib/police';
 import {
   KAYDEDILMEMIS_UYARISI, birYilSonrasi, degisiklikVarMi, gecmisDegerler, komisyonHesapla,
   sureyiCikar, tarihEkle,
@@ -75,14 +75,6 @@ const VARSAYILAN_SURE_BIRIMI: SureBirimi = 'yil';
  * göremiyordu.
  */
 const EN_UZUN_BRANS = 'İhtiyari Mali Mesuliyet (İMM) Sigortası';
-
-const ACILIYET_STIL: Record<string, string> = {
-  gecmis: 'bg-slate-200 text-slate-700',
-  kritik: 'bg-rose-100 text-rose-800',
-  uyari: 'bg-amber-100 text-amber-800',
-  yaklasiyor: 'bg-blue-100 text-blue-800',
-  normal: 'bg-emerald-50 text-emerald-700',
-};
 
 /**
  * Sayfanın gövdesi. Varsayılan dışa aktarım DEĞİL: `useSearchParams` kullanan

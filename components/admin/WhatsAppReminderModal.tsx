@@ -2,12 +2,14 @@
 
 import React, { useEffect } from 'react';
 import { MessageCircle, X, ExternalLink } from 'lucide-react';
-import type { Customer } from '@/lib/types';
+import type { MusteriOzeti } from '@/lib/types';
 import { musteriAdi } from '@/lib/police';
 import { useModalErisilebilirlik } from './useModalErisilebilirlik';
 
 interface WhatsAppReminderModalProps {
-  musteri: Customer | undefined;
+  /** Yalnız ad ve cep numarası kullanılır; tam müşteri kaydı istemek bu pencereyi
+   *  hafif özet satırlarından yeniden kullanılamaz yapıyordu. */
+  musteri: MusteriOzeti | undefined;
   sablon: string;
   onSablonChange: (deger: string) => void;
   /** Yer tutucuları doldurulmuş, gönderilecek son metin. */

@@ -83,6 +83,43 @@ export function aciliyet(kalan: number | null): Aciliyet {
   return 'normal';
 }
 
+/**
+ * Aciliyet seviyesinin rozet sınıfları.
+ *
+ * Poliçe takibi ekranında yerel bir sabitti; yenileme panosu da aynı renk dilini
+ * kullandığı için buraya taşındı. İki ekranda farklı renkler, aynı poliçeyi iki
+ * yerde farklı aciliyette gösterirdi. `Record<Aciliyet, string>` tiplemesi eksik
+ * seviyeyi derlemede yakalar.
+ */
+export const ACILIYET_STIL: Record<Aciliyet, string> = {
+  gecmis: 'bg-slate-200 text-slate-700',
+  kritik: 'bg-rose-100 text-rose-800',
+  uyari: 'bg-amber-100 text-amber-800',
+  yaklasiyor: 'bg-blue-100 text-blue-800',
+  normal: 'bg-emerald-50 text-emerald-700',
+};
+
+/** Yenileme panosunun gün eşikleri; sıra dar → geniş ve bu sıra anlamlıdır. */
+export const YENILEME_ESIKLERI = [7, 15, 30] as const;
+
+/**
+ * Panonun en geniş penceresi. Eşiklerden TÜRETİLİR: eşik listesi değişince
+ * sunucudaki sorgu aralığını ayrıca güncellemek gerekmesin.
+ */
+export const YENILEME_PENCERESI_GUN = Math.max(...YENILEME_ESIKLERI);
+
+/**
+ * Poliçenin düştüğü EN DAR eşik.
+ *
+ * 5 gün kalan bir poliçe hem 7'ye hem 30'a girer; listede iki kez görünmemesi için
+ * en acil kovaya yerleşir. Süresi geçmiş ya da pencere dışındaki poliçe için null
+ * döner — pano yalnız "aranacaklar" listesidir, geçmiş poliçe takibinde durur.
+ */
+export function yenilemeEsigi(kalan: number | null): number | null {
+  if (kalan === null || kalan < 0) return null;
+  return YENILEME_ESIKLERI.find((esik) => kalan <= esik) ?? null;
+}
+
 /** ISO (YYYY-MM-DD) tarihi spesifikasyondaki GG.AA.YYYY biçimine çevirir. */
 export function formatTarih(iso?: string): string {
   if (!iso) return '—';
@@ -118,8 +155,17 @@ export function toWhatsAppNumber(raw?: string): string | null {
   return `90${d}`;
 }
 
-/** Müşterinin ekranda gösterilecek adı. Tip'e göre değişir. */
-export function musteriAdi(customer: Customer): string {
+/**
+ * Müşterinin ekranda gösterilecek adı. Tip'e göre değişir.
+ *
+ * Parametre TAM `Customer` değil, ad üretimi için gereken alanlardır: yenileme
+ * panosu kimlik numarası taşımayan hafif bir özet satırı kullanıyor ve aynı ad
+ * kuralını ikinci kez yazmak zorunda kalmasın. Tam `Customer` geçen mevcut
+ * çağrılar yapısal olarak bunu karşıladığı için hiçbiri değişmedi.
+ */
+export function musteriAdi(
+  customer: Pick<Customer, 'tip' | 'ad' | 'soyad' | 'firmaUnvani' | 'markaAdi'>,
+): string {
   if (customer.tip === 'kurumsal') {
     return customer.firmaUnvani?.trim() || customer.markaAdi?.trim() || 'İsimsiz kurum';
   }
@@ -222,4 +268,135 @@ export function riskTanimiPlakasiz(riskTanimi?: string, plaka?: string): string 
   const tanim = riskTanimi?.trim();
   if (!tanim || !plaka || !tanim.startsWith(plaka)) return tanim || undefined;
   return tanim.slice(plaka.length).replace(/^\s*·\s*/, '').trim() || undefined;
+}
+
+// --- Yenileme zinciri -------------------------------------------------------
+//
+// Müşterinin aynı riski yıl yıl yenileyip yenilemediğini görünür kılar. Bağ
+// `oncekiPoliceNo` METNİ üzerinden kurulur: veritabanında poliçe numarası TEKİL
+// DEĞİL ve tekliften çevrilen kayıtlarda boş olabiliyor. Bu yüzden boş numara hiç
+// eşleşmez ve eşleşme aynı müşteriyle sınırlanır.
+
+/** Zincirde kullanılabilir poliçe numarası; boş/boşluk numara bağ kurmaz. */
+function zincirNosu(deger: string | undefined): string {
+  return (deger || '').trim();
+}
+
+/** Bir poliçenin yenilemesi olduğu poliçeyi bulur. */
+export function oncekiPoliceyiBul(police: Policy, adaylar: readonly Policy[]): Policy | undefined {
+  const aranan = zincirNosu(police.oncekiPoliceNo);
+  if (!police.yenilemeMi || !aranan) return undefined;
+
+  const eslesenler = adaylar.filter(
+    (a) => a.id !== police.id && a.musteriId === police.musteriId && zincirNosu(a.policeNo) === aranan,
+  );
+  if (eslesenler.length < 2) return eslesenler[0];
+
+  // Numara tekil olmadığı için başka ayırt edici yok: yenilemenin başlangıcına
+  // tarih olarak en yakın biten kayıt doğru öncekidir.
+  const baslangic = Date.parse(police.baslangicTarihi);
+  return [...eslesenler].sort(
+    (a, b) =>
+      Math.abs(Date.parse(a.bitisTarihi) - baslangic) - Math.abs(Date.parse(b.bitisTarihi) - baslangic),
+  )[0];
+}
+
+/**
+ * Poliçeleri yenileme zincirlerine ayırır; her zincir ESKİDEN YENİYE sıralıdır.
+ *
+ * Zincire girmeyen tek poliçeler de tek elemanlı zincir olarak döner ki çağıran
+ * taraf listeyi ikiye bölmek zorunda kalmasın.
+ */
+export function yenilemeZincirleri(policeler: readonly Policy[]): Policy[][] {
+  const oncekiId = new Map<string, string>();
+  const sonraki = new Map<string, Policy>();
+
+  for (const p of policeler) {
+    const onceki = oncekiPoliceyiBul(p, policeler);
+    if (!onceki) continue;
+
+    const mevcut = sonraki.get(onceki.id);
+    // Aynı poliçeyi iki kayıt birden "önceki" gösterebilir (veri hatası). Zincir
+    // çatallanmasın diye erken başlayan devam sayılır, diğeri kendi zincirinin
+    // başı olarak kalır.
+    if (mevcut && Date.parse(mevcut.baslangicTarihi) <= Date.parse(p.baslangicTarihi)) continue;
+    if (mevcut) oncekiId.delete(mevcut.id);
+    sonraki.set(onceki.id, p);
+    oncekiId.set(p.id, onceki.id);
+  }
+
+  const zincirler: Policy[][] = [];
+  const ziyaret = new Set<string>();
+
+  for (const kok of policeler.filter((p) => !oncekiId.has(p.id))) {
+    const zincir: Policy[] = [];
+    let imlec: Policy | undefined = kok;
+
+    // Bozuk veride döngüsellik (A'nın devamı B, B'nin devamı A) tarayıcıyı
+    // kilitlerdi; her poliçe zincire yalnız bir kez girer.
+    while (imlec && !ziyaret.has(imlec.id)) {
+      ziyaret.add(imlec.id);
+      zincir.push(imlec);
+      imlec = sonraki.get(imlec.id);
+    }
+
+    if (zincir.length > 0) zincirler.push(zincir);
+  }
+
+  // Kök bulunamayan kayıtlar buradan toplanır. Tam döngüde (A→B, B→A) HER poliçenin
+  // bir öncekisi olur, yani hiç kök kalmaz ve döngüdeki poliçeler sessizce listeden
+  // düşerdi — müşteri kartında poliçe kaybolması, gösterilememesinden çok daha kötü.
+  for (const p of policeler) {
+    if (ziyaret.has(p.id)) continue;
+    ziyaret.add(p.id);
+    zincirler.push([p]);
+  }
+
+  // Uzun zincirler önce: "kaç yıldır sürdürüyor" bilgisi en değerli olan.
+  return zincirler.sort((a, b) => b.length - a.length);
+}
+
+/** Müşterinin kıdemi: ilk poliçesinin tarihi ve üzerinden geçen tam yıl. */
+export interface MusteriKidemi {
+  yil: number;
+  ilkTarih: string;
+}
+
+/**
+ * Müşteri kaç yıldır bizimle?
+ *
+ * İlk poliçenin BAŞLANGIÇ tarihinden bugüne geçen tam yıl sayılır. Poliçe yoksa
+ * ya da hiçbirinin tarihi çözülemiyorsa null döner; çağıran taraf rozet basmaz.
+ */
+export function musteriKidemi(policeler: readonly Policy[], simdi: Date): MusteriKidemi | null {
+  const tarihler = policeler
+    .map((p) => Date.parse(p.baslangicTarihi))
+    .filter((t) => !Number.isNaN(t));
+  if (tarihler.length === 0) return null;
+
+  const ilk = new Date(Math.min(...tarihler));
+  let yil = simdi.getFullYear() - ilk.getFullYear();
+  // Yıl dönümü henüz gelmediyse bir eksiği doğrudur: 11 ay önce gelen müşteriye
+  // "1 yıldır bizimle" demek yanıltıcı.
+  const donumGecti =
+    simdi.getMonth() > ilk.getMonth() ||
+    (simdi.getMonth() === ilk.getMonth() && simdi.getDate() >= ilk.getDate());
+  if (!donumGecti) yil -= 1;
+
+  return { yil: Math.max(0, yil), ilkTarih: ilk.toISOString().slice(0, 10) };
+}
+
+/**
+ * Zincir kopmuş mu? (kayıp müşteri işareti)
+ *
+ * Zincirin SON poliçesinin süresi dolmuş ve yerine yenisi girilmemişse doğrudur.
+ * İptal edilmiş poliçeler kayıp sayılmaz: müşteri zaten bilerek ayrılmış, hatırlatma
+ * gönderilecek bir durum değil.
+ */
+export function zincirYenilenmedi(zincir: readonly Policy[], simdi: Date): boolean {
+  const son = zincir[zincir.length - 1];
+  if (!son || son.durum === 'İptal' || son.durum === 'Yenilendi') return false;
+
+  const kalan = kalanGun(son.bitisTarihi, simdi);
+  return kalan !== null && kalan < 0;
 }

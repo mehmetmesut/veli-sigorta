@@ -329,6 +329,29 @@ export interface Policy {
   updatedAt: string;
 }
 
+/**
+ * Müşterinin gösterime giren en küçük alt kümesi.
+ *
+ * NEDEN VAR: Yenileme panosu tüm müşteri kaydını indirmez. `Customer` T.C. kimlik
+ * ve vergi numarası taşıyor; özet panelde ad ile cep numarasından fazlası hiç
+ * kullanılmıyor, tarayıcıya taşınması sebepsiz bir sızıntı yüzeyi olurdu.
+ */
+export type MusteriOzeti = Pick<
+  Customer,
+  'id' | 'tip' | 'ad' | 'soyad' | 'firmaUnvani' | 'markaAdi' | 'mobilTelefon'
+>;
+
+/** Özet paneldeki yenileme panosunun tek satırı. */
+export interface YaklasanBitis {
+  policeId: string;
+  policeNo: string;
+  sigortaSirketi: string;
+  sigortaTuru: string;
+  /** ISO (YYYY-MM-DD). Kalan gün istemcide `lib/police.ts` ile hesaplanır. */
+  bitisTarihi: string;
+  musteri: MusteriOzeti;
+}
+
 export interface QuoteRequest {
   id: string;
   timestamp: string;

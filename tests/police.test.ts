@@ -8,7 +8,15 @@ import {
   filtreyeUyuyorMu,
   formatTarih,
   hatirlatmaMetniOlustur,
+  YENILEME_ESIKLERI,
+  YENILEME_PENCERESI_GUN,
   kalanGun,
+  musteriAdi,
+  yenilemeEsigi,
+  musteriKidemi,
+  oncekiPoliceyiBul,
+  yenilemeZincirleri,
+  zincirYenilenmedi,
   tcKimlikGecerliMi,
   toWhatsAppNumber,
   whatsappBaglantisi,
@@ -147,4 +155,151 @@ test('TCKN doğrulaması geçerli numarayı kabul, bozuğu reddeder', () => {
   assert.equal(tcKimlikGecerliMi('10000000147'), false, 'son hane bozuk');
   assert.equal(tcKimlikGecerliMi('01234567890'), false, 'ilk hane sıfır olamaz');
   assert.equal(tcKimlikGecerliMi('123'), false, 'eksik hane');
+});
+
+// --- Yenileme zinciri ------------------------------------------------------
+//
+// Zincir METIN eslesmesiyle kuruluyor (police numarasi tekil degil, bos olabiliyor).
+// Bu yuzden testlerin agirligi mutlu yolda degil, BOZUK VERIDE: yanlis birlesen bir
+// zincir musteri kartinda "3 yildir bizimle" gibi YANLIS bir bilgi gosterirdi.
+
+function zincirPolicesi(over: Partial<Policy>): Policy {
+  return { ...police('2026-12-31'), ...over };
+}
+
+test('yenileme zinciri poliçeleri eskiden yeniye sıralar', () => {
+  // Arrange — giriş sırası bilerek karışık
+  const y1 = zincirPolicesi({ id: '1', policeNo: 'A1', baslangicTarihi: '2024-01-01', bitisTarihi: '2025-01-01' });
+  const y2 = zincirPolicesi({ id: '2', policeNo: 'A2', baslangicTarihi: '2025-01-01', bitisTarihi: '2026-01-01', yenilemeMi: true, oncekiPoliceNo: 'A1' });
+  const y3 = zincirPolicesi({ id: '3', policeNo: 'A3', baslangicTarihi: '2026-01-01', bitisTarihi: '2027-01-01', yenilemeMi: true, oncekiPoliceNo: 'A2' });
+
+  // Act
+  const zincirler = yenilemeZincirleri([y3, y1, y2]);
+
+  // Assert
+  assert.equal(zincirler.length, 1);
+  assert.deepEqual(zincirler[0].map((p) => p.id), ['1', '2', '3']);
+});
+
+test('boş poliçe numaralı kayıtlar zincire bağlanmaz', () => {
+  // Tekliften çevrilen poliçelerde numara boş kalabiliyor; boş numara üzerinden
+  // eşleşme kurulsaydı ilgisiz kayıtlar tek zincirde toplanırdı.
+  const a = zincirPolicesi({ id: '1', policeNo: '' });
+  const b = zincirPolicesi({ id: '2', policeNo: '', yenilemeMi: true, oncekiPoliceNo: '  ' });
+
+  const zincirler = yenilemeZincirleri([a, b]);
+
+  assert.equal(zincirler.length, 2);
+});
+
+test('başka müşterinin aynı numaralı poliçesi zincire karışmaz', () => {
+  // Poliçe numarası veritabanında tekil değil: iki şirketin numaraları çakışabilir.
+  const benim = zincirPolicesi({ id: '1', musteriId: 'c1', policeNo: 'ORTAK' });
+  const baskasinin = zincirPolicesi({ id: '2', musteriId: 'c2', policeNo: 'ORTAK' });
+  const yenileme = zincirPolicesi({ id: '3', musteriId: 'c1', policeNo: 'Y', yenilemeMi: true, oncekiPoliceNo: 'ORTAK' });
+
+  const onceki = oncekiPoliceyiBul(yenileme, [benim, baskasinin, yenileme]);
+
+  assert.equal(onceki?.id, '1');
+});
+
+test('aynı numara iki kayıtta varsa tarihçe en yakını seçilir', () => {
+  const eski = zincirPolicesi({ id: '1', policeNo: 'A', bitisTarihi: '2020-01-01' });
+  const yakin = zincirPolicesi({ id: '2', policeNo: 'A', bitisTarihi: '2026-01-01' });
+  const yenileme = zincirPolicesi({ id: '3', policeNo: 'B', baslangicTarihi: '2026-01-01', yenilemeMi: true, oncekiPoliceNo: 'A' });
+
+  const onceki = oncekiPoliceyiBul(yenileme, [eski, yakin, yenileme]);
+
+  assert.equal(onceki?.id, '2');
+});
+
+test('döngüsel veri sonsuz döngüye girmez', () => {
+  // A'nın devamı B, B'nin devamı A diye kaydedilmiş bozuk veri tarayıcıyı kilitlerdi.
+  const a = zincirPolicesi({ id: '1', policeNo: 'A', yenilemeMi: true, oncekiPoliceNo: 'B' });
+  const b = zincirPolicesi({ id: '2', policeNo: 'B', yenilemeMi: true, oncekiPoliceNo: 'A' });
+
+  const zincirler = yenilemeZincirleri([a, b]);
+
+  // Her poliçe zincire yalnız bir kez girer; test donmadan biterse kural işliyor.
+  assert.equal(zincirler.flat().length, 2);
+});
+
+test('yenileme işareti olmayan poliçe önceki aramaz', () => {
+  const p = zincirPolicesi({ id: '1', yenilemeMi: false, oncekiPoliceNo: 'A' });
+
+  assert.equal(oncekiPoliceyiBul(p, [p]), undefined);
+});
+
+test('kıdem ilk poliçenin başlangıcından sayılır', () => {
+  const eski = zincirPolicesi({ id: '1', baslangicTarihi: '2023-03-10' });
+  const yeni = zincirPolicesi({ id: '2', baslangicTarihi: '2026-01-01' });
+
+  const kidem = musteriKidemi([yeni, eski], BUGUN);
+
+  assert.equal(kidem?.yil, 3);
+  assert.equal(kidem?.ilkTarih, '2023-03-10');
+});
+
+test('yıl dönümü gelmemişse kıdem bir eksik sayılır', () => {
+  // 11 ay önce gelen müşteriye "1 yıldır bizimle" demek yanıltıcı olurdu.
+  const p = zincirPolicesi({ baslangicTarihi: '2025-12-01' });
+
+  assert.equal(musteriKidemi([p], BUGUN)?.yil, 0);
+});
+
+test('poliçesi olmayan müşteride kıdem yoktur', () => {
+  assert.equal(musteriKidemi([], BUGUN), null);
+});
+
+test('süresi dolmuş ve yenilenmemiş zincir kayıp sayılır', () => {
+  const p = zincirPolicesi({ bitisTarihi: '2026-01-01', durum: 'Aktif' });
+
+  assert.equal(zincirYenilenmedi([p], BUGUN), true);
+});
+
+test('iptal edilmiş poliçe kayıp müşteri sayılmaz', () => {
+  // Müşteri bilerek ayrılmış; hatırlatma gönderilecek bir durum değil.
+  const p = zincirPolicesi({ bitisTarihi: '2026-01-01', durum: 'İptal' });
+
+  assert.equal(zincirYenilenmedi([p], BUGUN), false);
+});
+
+test('yürürlükteki poliçe kayıp sayılmaz', () => {
+  const p = zincirPolicesi({ bitisTarihi: '2026-12-31', durum: 'Aktif' });
+
+  assert.equal(zincirYenilenmedi([p], BUGUN), false);
+});
+
+// --- Yenileme panosu esikleri ----------------------------------------------
+
+test('poliçe düştüğü en dar eşiğe yerleşir', () => {
+  // 5 gün kalan poliçe hem 7'ye hem 30'a girer; listede iki kez görünmemesi için
+  // en acil kovaya yerleşmeli.
+  assert.equal(yenilemeEsigi(0), 7);
+  assert.equal(yenilemeEsigi(7), 7);
+  assert.equal(yenilemeEsigi(8), 15);
+  assert.equal(yenilemeEsigi(15), 15);
+  assert.equal(yenilemeEsigi(16), 30);
+  assert.equal(yenilemeEsigi(30), 30);
+});
+
+test('pencere dışındaki ve süresi geçmiş poliçe panoya girmez', () => {
+  // Pano "aranacaklar" listesidir; geçmiş poliçe poliçe takibi ekranında durur.
+  assert.equal(yenilemeEsigi(31), null);
+  assert.equal(yenilemeEsigi(-1), null);
+  assert.equal(yenilemeEsigi(null), null);
+});
+
+test('sorgu penceresi eşiklerden türetilir', () => {
+  // Sunucudaki sorgu aralığı bu değerle kuruluyor. Elle yazılsaydı eşik listesi
+  // değiştiğinde pano sessizce eksik veri gösterirdi.
+  assert.equal(YENILEME_PENCERESI_GUN, Math.max(...YENILEME_ESIKLERI));
+  assert.equal(YENILEME_PENCERESI_GUN, 30);
+});
+
+test('müşteri adı yalnız ad alanlarını taşıyan özet kayıtla da çalışır', () => {
+  // Yenileme panosu kimlik numarası taşımayan hafif bir özet satırı kullanıyor;
+  // ad kuralının ikinci kez yazılmaması için imza bu alt kümeyi kabul ediyor.
+  assert.equal(musteriAdi({ tip: 'bireysel', ad: 'Mehmet Mesut', soyad: 'YILMAZ' }), 'Mehmet Mesut YILMAZ');
+  assert.equal(musteriAdi({ tip: 'kurumsal', firmaUnvani: 'Işık Turizm A.Ş.' }), 'Işık Turizm A.Ş.');
 });

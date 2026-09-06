@@ -56,7 +56,7 @@ export function isRestrictedEntity(entity: string): entity is RestrictedEntity {
 const CRM_ROLES: readonly AdminRole[] = ['superadmin', 'admin', 'user'];
 
 /** `?fields=` ile istenen ve CRM verisi taşıyan alanlar. */
-export const CRM_FIELDS = ['customers', 'policies', 'policeSayilari'] as const;
+export const CRM_FIELDS = ['customers', 'policies', 'policeSayilari', 'yaklasanBitisler'] as const;
 
 /** Müşteri ve poliçe kaydı yazan içerik türleri. */
 export const CRM_ENTITIES = ['customers', 'policies'] as const;

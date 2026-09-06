@@ -8,10 +8,14 @@ import {
   UserCheck, UserX,
 } from 'lucide-react';
 import type { Customer, InsuranceService, Policy, QuoteRequest } from '@/lib/types';
-import { formatTarih, formatTutar, kalanGun, musteriAdi, plakayiBul, riskTanimiPlakasiz } from '@/lib/police';
+import {
+  formatTarih, formatTutar, kalanGun, musteriAdi, musteriKidemi, plakayiBul,
+  riskTanimiPlakasiz, yenilemeZincirleri,
+} from '@/lib/police';
 import { bransKisaAd, bransRengi } from '@/lib/brans-renk';
 import { MusteriBasligi, MusteriBilgiBloklari } from '@/components/admin/musteri-bilgi';
 import { durumBildirimi, durumOnayMetni } from '@/lib/musteri-durum';
+import { YenilemeZinciriKarti } from '@/components/admin/YenilemeZinciri';
 import { KopyaDugmesi } from '@/components/admin/KopyaDugmesi';
 import { Field, FieldRow, inputCls } from '@/components/admin/form-ui';
 import { useModalErisilebilirlik } from '@/components/admin/useModalErisilebilirlik';
@@ -136,7 +140,7 @@ export default function CustomerDetailPage() {
     [customers, musteriId],
   );
 
-  const { aktifPoliceler, gecmisPoliceler } = useMemo(() => {
+  const { aktifPoliceler, gecmisPoliceler, musterininPoliceleri } = useMemo(() => {
     const hepsi = policies
       .filter((p) => p.musteriId === musteriId)
       .sort((a, b) => Date.parse(b.bitisTarihi) - Date.parse(a.bitisTarihi));
@@ -144,8 +148,14 @@ export default function CustomerDetailPage() {
     return {
       aktifPoliceler: hepsi.filter((p) => aktifMi(p, simdi)),
       gecmisPoliceler: hepsi.filter((p) => !aktifMi(p, simdi)),
+      musterininPoliceleri: hepsi,
     };
   }, [policies, musteriId, simdi]);
+
+  // Zincir ve kıdem müşterinin kendi poliçelerinden kurulur; sayfa zaten hepsini
+  // çekiyor, ek istek gerekmiyor.
+  const zincirler = useMemo(() => yenilemeZincirleri(musterininPoliceleri), [musterininPoliceleri]);
+  const kidem = useMemo(() => musteriKidemi(musterininPoliceleri, simdi), [musterininPoliceleri, simdi]);
 
   /**
    * Bu müşterinin teklifleri. Eski kayıtlarda `musteriId` yok (site formundan
@@ -323,7 +333,17 @@ export default function CustomerDetailPage() {
       {/* Üst bölüm: kim + bu müşteriyle yapılabilecek işler */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs">
         <div className="flex items-start justify-between gap-4 flex-wrap p-5 border-b border-slate-200">
-          <MusteriBasligi musteri={musteri} />
+          <div className="space-y-1.5">
+            <MusteriBasligi musteri={musteri} />
+            {/* Kıdem rozeti: personel "bu müşteri bizde ne kadar eski?" sorusunun
+                cevabını konuşmaya başlamadan görmeli. İlk yılını doldurmamış
+                müşteride basılmaz — "0 yıldır bizimle" bilgi vermez. */}
+            {kidem && kidem.yil >= 1 && (
+              <span className="inline-block text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                {kidem.yil} yıldır bizimle · ilk poliçe {formatTarih(kidem.ilkTarih)}
+              </span>
+            )}
+          </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             <button
@@ -419,6 +439,11 @@ export default function CustomerDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Zincir kartı tarihçenin ALTINDA: önce "şu an ne var", sonra "geçmişte ne
+          oldu", en sonda "kaç yıldır sürüyor" okunur. Anlatacak geçmiş yoksa kart
+          kendini hiç çizmez. */}
+      <YenilemeZinciriKarti zincirler={zincirler} simdi={simdi} />
 
       {/* Teklifler: onaylanan teklif buradan poliçeye çevrilir */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-5 space-y-3">

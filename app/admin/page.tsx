@@ -23,6 +23,13 @@ import {
 import { Ga4Grafikleri } from '@/components/admin/Ga4Grafikleri';
 import { AramaKonsoluGrafikleri } from '@/components/admin/AramaKonsoluGrafikleri';
 import { BilgiKutulari } from '@/components/admin/BilgiKutulari';
+import { YaklasanYenilemeler } from '@/components/admin/YaklasanYenilemeler';
+import { WhatsAppReminderModal } from '@/components/admin/WhatsAppReminderModal';
+import type { YaklasanBitis } from '@/lib/types';
+import {
+  VARSAYILAN_HATIRLATMA_METNI, formatTarih, hatirlatmaMetniOlustur, kalanGun,
+  musteriAdi, whatsappBaglantisi,
+} from '@/lib/police';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { sayfayaErisebilirMi } from '@/lib/permissions';
 
@@ -47,6 +54,13 @@ export default function AdminDashboardPage() {
   const [ga4, setGa4] = useState<any>(null);
   const [gsc, setGsc] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  /** Yaklaşan poliçe bitişleri. Ayrı istekte çekilir; bkz. loadAll. */
+  const [yaklasanlar, setYaklasanlar] = useState<YaklasanBitis[]>([]);
+  /** WhatsApp hatırlatma penceresi açık olan satır. */
+  const [waSatir, setWaSatir] = useState<YaklasanBitis | null>(null);
+  const [waSablon, setWaSablon] = useState(VARSAYILAN_HATIRLATMA_METNI);
+  /** "Şu an" bir kez hesaplanır; her render'da yenilenmesi listeyi oynatırdı. */
+  const [simdi] = useState(() => new Date());
   const { role } = useAdminRole();
 
   const loadAll = () => {
@@ -69,6 +83,14 @@ export default function AdminDashboardPage() {
       })
       .catch((err) => console.error(err))
       .finally(() => setLoading(false));
+
+    // Yaklaşan bitişler AYRI istekte çekilir. Üstteki isteğe eklenseydi, CRM
+    // yetkisi olmayan bir rolde uç 403 döner ve özet panelin TAMAMI boş kalırdı;
+    // ayrı istekte yalnız bu bölüm çizilmez, panelin geri kalanı çalışır.
+    fetch('/api/admin/content?fields=yaklasanBitisler')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setYaklasanlar(d?.yaklasanBitisler ?? []))
+      .catch(() => setYaklasanlar([]));
   };
 
   useEffect(() => {
@@ -91,6 +113,24 @@ export default function AdminDashboardPage() {
   // sırayla çağrılmak zorunda, `if (loading) return` sonrasına konursa yükleme
   // bitince sıra değişir ve React durumu karıştırır.
   const quotes = useMemo(() => data?.quotes ?? [], [data]);
+
+  /** WhatsApp penceresinin gövdesi: şablondaki yer tutucular doldurulmuş metin. */
+  const waMesaj = useMemo(() => {
+    if (!waSatir) return '';
+    return hatirlatmaMetniOlustur(waSablon, {
+      musteri: musteriAdi(waSatir.musteri),
+      sirket: waSatir.sigortaSirketi,
+      brans: waSatir.sigortaTuru,
+      policeNo: waSatir.policeNo,
+      bitis: formatTarih(waSatir.bitisTarihi),
+      kalanGun: String(kalanGun(waSatir.bitisTarihi, simdi) ?? 0),
+    });
+  }, [waSatir, waSablon, simdi]);
+
+  const waLink = useMemo(
+    () => (waSatir ? whatsappBaglantisi(waSatir.musteri.mobilTelefon, waMesaj) : null),
+    [waSatir, waMesaj],
+  );
 
 
   if (loading) {
@@ -209,6 +249,22 @@ export default function AdminDashboardPage() {
           <div className="text-[11px] text-slate-500">Aktif yetkili acentelikler</div>
         </div>
       </div>
+
+      {/* Yaklaşan yenilemeler, teklif tablosunun ÜSTÜNDE: acentenin geliri
+          yenilemeden geliyor ve süresi dolan poliçenin geri kazanılabileceği
+          pencere dar. Yeni teklif ise beklerken kaybolmaz. */}
+      <YaklasanYenilemeler satirlar={yaklasanlar} simdi={simdi} onHatirlat={setWaSatir} />
+
+      {waSatir && (
+        <WhatsAppReminderModal
+          musteri={waSatir.musteri}
+          sablon={waSablon}
+          onSablonChange={setWaSablon}
+          mesaj={waMesaj}
+          link={waLink}
+          onClose={() => setWaSatir(null)}
+        />
+      )}
 
       {/* QUOTES TABLE */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-2xs space-y-4">

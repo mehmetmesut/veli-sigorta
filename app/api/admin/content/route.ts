@@ -15,7 +15,7 @@ import {
 } from '@/lib/permissions';
 import type { Customer, QuoteRequest, SiteSettings } from '@/lib/types';
 import { adSoyadAyir, birYilSonrasi, ilIlceAyir, tamAdBicimlendir, telefonMaskele } from '@/lib/form-helpers';
-import { bicimlendirAd, bicimlendirSoyad, musteriAdi } from '@/lib/police';
+import { YENILEME_PENCERESI_GUN, bicimlendirAd, bicimlendirSoyad, musteriAdi } from '@/lib/police';
 import {
   consumeRateLimit,
   getClientRateLimitKey,
@@ -62,6 +62,7 @@ import {
   benzerMusteriAra,
   guncellemeZamani,
   musteriBasinaPoliceSayisi,
+  yaklasanBitisleriGetir,
   musteriKaydet,
   musteriSil,
   musteriVarMi,
@@ -272,6 +273,11 @@ export async function GET(req: NextRequest) {
   if (istenen.includes('customers')) yanit.customers = await musterileriGetir();
   if (istenen.includes('policies')) yanit.policies = await policeleriGetir();
   if (istenen.includes('policeSayilari')) yanit.policeSayilari = await musteriBasinaPoliceSayisi();
+  // Yenileme panosu: tüm poliçe + müşteri tablosunu indirmek yerine yalnız önümüzdeki
+  // pencereye düşen satırlar döner ve müşteriden yalnız ad ile telefon taşınır.
+  if (istenen.includes('yaklasanBitisler')) {
+    yanit.yaklasanBitisler = await yaklasanBitisleriGetir(YENILEME_PENCERESI_GUN);
+  }
   if (istenen.includes('auditLogs')) yanit.auditLogs = await denetimKayitlariGetir(150);
 
   return NextResponse.json(yanit);

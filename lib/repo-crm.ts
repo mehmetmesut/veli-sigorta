@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { CorporateContact, Customer, Policy, PolicyStatus } from './types';
+import type { CorporateContact, Customer, Policy, PolicyStatus, YaklasanBitis } from './types';
 import {
   boolCoz,
   calistir,
@@ -258,6 +258,53 @@ export async function bitisAraligindaSay(gunBaslangic: number, gunBitis: number)
     [gunBaslangic, gunBitis],
   );
   return Number(satir?.adet ?? 0);
+}
+
+/**
+ * Yenileme takibi için yaklaşan bitişler.
+ *
+ * NEDEN AYRI SORGU: Özet panel bunun için tüm poliçe ve müşteri tablosunu indirmek
+ * zorunda kalmasın. Müşteri kaydı T.C. kimlik ve vergi numarası taşıyor; bu ekranda
+ * yalnız ad ile cep numarası gerekiyor. `ix_policies_durum_bitis` indeksi kullanılır.
+ *
+ * Aralık BİR GÜN GERİDEN başlar: sunucunun takvim günü ile tarayıcınınki saat dilimi
+ * yüzünden kayabilir. Kesin "kalan gün" kararını istemci `lib/police.ts` ile verir;
+ * sorgu yalnızca aday kümeyi daraltır.
+ *
+ * Yalnız 'Aktif' poliçeler döner: yenilenmiş ya da iptal edilmiş bir poliçe için
+ * müşteriyi aramak yanlış olurdu.
+ */
+export async function yaklasanBitisleriGetir(gun: number): Promise<YaklasanBitis[]> {
+  const satirlar = await sorgula(
+    `SELECT p.id, p.police_no, p.sigorta_sirketi, p.sigorta_turu, p.bitis_tarihi,
+            c.id AS musteri_id, c.tip, c.ad, c.soyad, c.firma_unvani, c.marka_adi,
+            c.mobil_telefon
+       FROM policies p
+       JOIN customers c ON c.id = p.musteri_id
+      WHERE p.durum = 'Aktif'
+        AND p.bitis_tarihi BETWEEN DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                               AND DATE_ADD(CURDATE(), INTERVAL ? DAY)
+      ORDER BY p.bitis_tarihi
+      LIMIT 500`,
+    [gun],
+  );
+
+  return satirlar.map((r) => ({
+    policeId: String(r.id),
+    policeNo: String(r.police_no ?? ''),
+    sigortaSirketi: String(r.sigorta_sirketi ?? ''),
+    sigortaTuru: String(r.sigorta_turu ?? ''),
+    bitisTarihi: String(r.bitis_tarihi),
+    musteri: {
+      id: String(r.musteri_id),
+      tip: r.tip === 'kurumsal' ? 'kurumsal' : 'bireysel',
+      ad: r.ad ? String(r.ad) : undefined,
+      soyad: r.soyad ? String(r.soyad) : undefined,
+      firmaUnvani: r.firma_unvani ? String(r.firma_unvani) : undefined,
+      markaAdi: r.marka_adi ? String(r.marka_adi) : undefined,
+      mobilTelefon: r.mobil_telefon ? String(r.mobil_telefon) : undefined,
+    },
+  }));
 }
 
 export async function policeKaydet(p: Policy): Promise<Policy> {
