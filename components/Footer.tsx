@@ -176,6 +176,25 @@ export function Footer({ company }: FooterProps) {
           </div>
         </div>
 
+        {/* Yapımcı imzası — footer'ın en alt satırı.
+            Telif satırının İÇİNE değil altına, ince bir çizgiyle ayrılmış kendi
+            satırına konur: sayfanın sahibi acentedir, yapımcı ikinci plandadır.
+            Üstteki çubuğun `uppercase` kuralını devralmaması için onun kardeşi
+            olarak yazılır — imza yazıldığı biçimde görünmelidir. */}
+        <div className="mt-6 pt-5 border-t border-[#333] text-center">
+          <p className="text-[10px] tracking-wide text-[#8A7E72]">
+            Yeşil Dönüşüm Mühendisi · Creator{' '}
+            <a
+              href="https://mehmetmesut.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold hover:text-[#F27D26] transition-colors"
+            >
+              M²Y
+            </a>
+          </p>
+        </div>
+
       </div>
     </footer>
   );
