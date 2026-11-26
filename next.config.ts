@@ -45,6 +45,11 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // Panel ve API dizine girmesin: robots.txt yalnız taramayı engeller, bağlantı verilen adresi
+      // dizinden çıkarmaz. Giriş sayfasının aramada görünmesi parola deneme saldırısını davet eder.
+      {source: '/admin', headers: [{key: 'X-Robots-Tag', value: 'noindex, nofollow'}]},
+      {source: '/admin/:path*', headers: [{key: 'X-Robots-Tag', value: 'noindex, nofollow'}]},
+      {source: '/api/:path*', headers: [{key: 'X-Robots-Tag', value: 'noindex, nofollow'}]},
     ];
   },
   // Allow access to remote image placeholder.

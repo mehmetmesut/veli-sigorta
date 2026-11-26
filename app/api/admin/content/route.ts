@@ -35,6 +35,7 @@ import {
   parseEntityLinks,
   parseFaq,
   parseIdData,
+  parseYorumData,
   parsePartner,
   parsePasswordData,
   parseQuote,
@@ -64,6 +65,7 @@ import {
   musteriBasinaPoliceSayisi,
   yaklasanBitisleriGetir,
   musteriKaydet,
+  musteriYorumDurumu,
   musteriSil,
   musteriVarMi,
   musterileriGetir,
@@ -702,6 +704,13 @@ async function handleContentPost(req: NextRequest): Promise<NextResponse> {
           // kişi düz "kaydedildi" satırından bunu ayırt edemiyordu.
           `Müşteri kaydedildi: ${kayit.musteriNo} (${kayit.tip}, ${kayit.isActive ? 'aktif' : 'PASİF'})`,
         );
+        return NextResponse.json({ success: true, customers: await musterileriGetir() });
+      }
+
+      if (action === 'yorum') {
+        const { id, alan, deger } = parseYorumData(data);
+        if (!(await musteriYorumDurumu(id, alan, deger))) throw new ContentValidationError('Müşteri bulunamadı.', 404);
+        await denetimKaydiEkle(current.email, 'CUSTOMER_REVIEW', `Yorum ${alan} ${deger ? 'işaretlendi' : 'kaldırıldı'} ID: ${id}`);
         return NextResponse.json({ success: true, customers: await musterileriGetir() });
       }
 

@@ -318,6 +318,9 @@ const customerSchema = z.object({
   isActive: z.boolean(),
   createdAt: isoDate,
   updatedAt: isoDate,
+  // Yalnız okunur: karttan geri gönderilebilir ama kayıtta yok sayılır (yazan uç `yorum` işlemi).
+  yorumIstendiAt: isoDate.optional(),
+  yorumGeldiAt: isoDate.optional(),
 }).strict().refine(
   (c) => (c.tip === 'bireysel' ? Boolean(c.ad?.trim() || c.soyad?.trim()) : Boolean(c.firmaUnvani?.trim())),
   { message: 'Bireysel müşteride ad/soyad, kurumsal müşteride firma unvanı zorunludur.' },
@@ -379,7 +382,8 @@ const envelopeSchema = z.object({
     'customers', 'policies',
   ]),
   // 'policelestir': onaylanan teklifi poliçe kaydına çevirir (bkz. quotes bloğu).
-  action: z.enum(['save', 'delete', 'clear', 'policelestir']).optional(),
+  // 'yorum': müşteri kartında Google yorumu istendi/geldi işareti.
+  action: z.enum(['save', 'delete', 'clear', 'policelestir', 'yorum']).optional(),
   data: z.unknown().optional(),
 }).strict();
 
@@ -424,6 +428,12 @@ export function parseContentEnvelope(value: unknown): ContentEnvelope {
 
 export function parseIdData(value: unknown): { id: string } {
   return parse(idDataSchema, value, 'Kayıt kimliği');
+}
+
+const yorumDataSchema = z.object({ id: identifier, alan: z.enum(['istendi', 'geldi']), deger: z.boolean() }).strict();
+
+export function parseYorumData(value: unknown): { id: string; alan: 'istendi' | 'geldi'; deger: boolean } {
+  return parse(yorumDataSchema, value, 'Yorum işareti');
 }
 
 export function parsePasswordData(value: unknown): { currentPassword: string; newPassword: string } {
@@ -506,7 +516,7 @@ export function parsePolicy(value: unknown): Policy {
 
 export function requireAction(
   actual: ContentEnvelope['action'],
-  expected: 'save' | 'delete' | 'clear' | 'policelestir',
+  expected: 'save' | 'delete' | 'clear' | 'policelestir' | 'yorum',
 ): void {
   if (actual !== expected) {
     throw new ContentValidationError('Geçersiz işlem türü.');

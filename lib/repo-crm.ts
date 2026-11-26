@@ -59,6 +59,8 @@ function satirdanMusteri(r: Record<string, unknown>): Customer {
     isActive: boolCoz(r.is_active),
     createdAt: dateToIso(r.created_at),
     updatedAt: dateToIso(r.updated_at),
+    yorumIstendiAt: r.yorum_istendi_at ? dateToIso(r.yorum_istendi_at) : undefined,
+    yorumGeldiAt: r.yorum_geldi_at ? dateToIso(r.yorum_geldi_at) : undefined,
   };
 }
 
@@ -186,6 +188,19 @@ export async function musteriKaydet(m: Customer): Promise<Customer> {
 }
 
 /** Müşteriyi siler. Bağlı poliçe varsa yabancı anahtar kısıtı silmeyi engeller. */
+/**
+ * Yorum takibini işaretler. `updated_at` değişmez: bu bir kart düzenlemesi değildir ve
+ * açık düzenleme formunda gereksiz "başkası değiştirdi" çakışması üretmemeli.
+ */
+export async function musteriYorumDurumu(id: string, alan: 'istendi' | 'geldi', deger: boolean): Promise<boolean> {
+  const kolon = alan === 'istendi' ? 'yorum_istendi_at' : 'yorum_geldi_at';
+  const { etkilenen } = await calistir(
+    `UPDATE customers SET ${kolon} = ${deger ? 'UTC_TIMESTAMP(3)' : 'NULL'} WHERE id = ?`,
+    [id],
+  );
+  return etkilenen > 0;
+}
+
 export async function musteriSil(id: string): Promise<{ silindi: boolean; bagliPolice: number }> {
   const sayim = await tekSatir('SELECT COUNT(*) AS adet FROM policies WHERE musteri_id = ?', [id]);
   const bagliPolice = Number(sayim?.adet ?? 0);

@@ -66,6 +66,7 @@ export function QuickQuoteForm({
 
         <a
           href={whatsappUrl}
+          data-amac="teklif"
           target="_blank"
           rel="noopener noreferrer"
           className="w-full py-3.5 px-4 bg-[#003366] hover:bg-blue-900 text-white font-bold text-xs uppercase tracking-widest inline-flex items-center justify-center gap-2 transition-colors"

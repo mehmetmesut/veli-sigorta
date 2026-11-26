@@ -80,7 +80,9 @@ export function AnalyticsTracker() {
       const kanal = href.startsWith('tel:') ? 'telefon' : /wa\.me|whatsapp\.com/.test(href) ? 'whatsapp' : null;
       if (!kanal || window.location.pathname.startsWith('/admin')) return;
       const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
-      gtag?.('event', 'iletisim_tiklama', { kanal, sayfa: window.location.pathname });
+      // data-amac="teklif" taşıyan bağlantı teklif formunun gönderimidir; ayrı olay olarak sayılır.
+      const olay = a?.getAttribute('data-amac') === 'teklif' ? 'teklif_gonderimi' : 'iletisim_tiklama';
+      gtag?.('event', olay, { kanal, sayfa: window.location.pathname });
     };
     document.addEventListener('click', tikla);
     return () => document.removeEventListener('click', tikla);

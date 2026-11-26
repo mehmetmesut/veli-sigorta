@@ -301,6 +301,23 @@ export default function CustomerDetailPage() {
     setTimeout(() => setMsg(''), 4000);
   }
 
+  /** Yorum takibi: ayrı uçtan yazılır, kart düzenlemesini ve çakışma denetimini etkilemez. */
+  async function yorumIsaretle(alan: 'istendi' | 'geldi', deger: boolean) {
+    if (!musteri) return;
+    setHata('');
+    const res = await fetch('/api/admin/content?fields=customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ entity: 'customers', action: 'yorum', data: { id: musteri.id, alan, deger } }),
+    });
+    const govde = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setHata(govde.error || 'Yorum işareti kaydedilemedi.');
+      return;
+    }
+    setCustomers(govde.customers || []);
+  }
+
   if (loading) return <div className="text-xs font-bold text-slate-500">Yükleniyor…</div>;
 
   if (!musteri) {
@@ -376,10 +393,23 @@ export default function CustomerDetailPage() {
                 href={yorumIstegiBaglantisi(musteri, SITE_ADRESI)!}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => void yorumIsaretle('istendi', true)}
                 className="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs inline-flex items-center gap-2"
               >
                 <Star className="w-4 h-4" /> Google Yorumu İste
               </a>
+            )}
+            {musteri.yorumIstendiAt && (
+              <label className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-600 px-2">
+                <input
+                  type="checkbox"
+                  checked={Boolean(musteri.yorumGeldiAt)}
+                  onChange={(e) => void yorumIsaretle('geldi', e.target.checked)}
+                />
+                {musteri.yorumGeldiAt
+                  ? `Yorum geldi · ${formatTarih(musteri.yorumGeldiAt)}`
+                  : `Yorum istendi · ${formatTarih(musteri.yorumIstendiAt)} — geldi mi?`}
+              </label>
             )}
           </div>
         </div>

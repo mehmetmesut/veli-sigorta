@@ -275,6 +275,10 @@ export interface Customer {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  /** Google yorumu en son ne zaman istendi; ayrı uçtan yazılır, kart kaydı bu alanı ezmez. */
+  yorumIstendiAt?: string;
+  /** Müşterinin yorum bıraktığı personelce işaretlendiği an. */
+  yorumGeldiAt?: string;
 }
 
 export type PolicyStatus = 'Aktif' | 'Yenilendi' | 'İptal' | 'Süresi Doldu';

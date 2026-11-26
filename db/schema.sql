@@ -182,6 +182,8 @@ CREATE TABLE IF NOT EXISTS customers (
   is_active          TINYINT(1)   NOT NULL DEFAULT 1,
   created_at         DATETIME(3)  NOT NULL,
   updated_at         DATETIME(3)  NOT NULL,
+  yorum_istendi_at   DATETIME(3)  NULL,
+  yorum_geldi_at     DATETIME(3)  NULL,
 
   UNIQUE KEY uq_customers_musteri_no (musteri_no),
   KEY ix_customers_tc (tc_kimlik_no),

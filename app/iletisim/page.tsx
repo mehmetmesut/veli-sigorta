@@ -5,7 +5,7 @@ import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { QuickQuoteForm } from '@/components/QuickQuoteForm';
 import { GoogleReviewBadge } from '@/components/GoogleReviewBadge';
-import { MapPin, Phone, Mail, Clock, MessageCircle, Building2, ShieldCheck } from 'lucide-react';
+import { MapPin, Phone, Mail, Clock, MessageCircle, Building2, ShieldCheck, Navigation } from 'lucide-react';
 import { getGeneralWhatsAppUrl } from '@/lib/whatsapp';
 import type { Metadata } from 'next';
 import { buildPageMetadata } from '@/lib/page-metadata';
@@ -26,6 +26,11 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ContactPage() {
   const db = await getDb();
   const company = db.companyInfo;
+  // Google Haritalar yol tarifi: koordinat hedefi, yer kimliği varsa işletme kaydının kendisi açılır.
+  const { geoLat, geoLng, googleBusinessPlaceId } = db.settings;
+  const yolTarifiUrl =
+    `https://www.google.com/maps/dir/?api=1&destination=${geoLat},${geoLng}` +
+    (googleBusinessPlaceId ? `&destination_place_id=${googleBusinessPlaceId}` : '');
 
   const baseUrl = getBaseUrl();
   const semalar = [
@@ -154,6 +159,15 @@ export default async function ContactPage() {
                     title="Veli Sigorta Kepez Konumu"
                   ></iframe>
                 </div>
+                <a
+                  href={yolTarifiUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 rounded-xl bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold py-2.5"
+                >
+                  <Navigation className="w-4 h-4" aria-hidden />
+                  Yol Tarifi Al
+                </a>
               </div>
 
             </div>
