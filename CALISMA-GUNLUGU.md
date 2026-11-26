@@ -17,3 +17,5 @@
 | 26.11.2026 16:18 | 5 rehber yazı + 2 taslak yayında (8 yazı), hizmet↔yazı bağlantıları, SSS 26'ya çıktı, IndexNow 32 adres | Canlıda | Tamamlandı |
 | 26.11.2026 16:18 | Bing Places: kayıt sahiplenildi ve PIN ile doğrulandı; e-posta, adres ayrıntısı, 6 ek kategori dolduruldu | Hizmet alanı ve kaydetme kullanıcıda | Devam ediyor |
 | 26.11.2026 16:18 | Yandex İşletme, Apple İşletme | Kullanıcı girişi bekleniyor | Beklemede |
+| 26.11.2026 16:31 | Yandex İşletme: "Veli Sigorta Acenteliği" kaydı SMS ile sahiplenildi; saat 9–18, site .com.tr, e-posta .com.tr formda düzeltildi | Kaydetme sunucuda 444 ile reddedildi, kullanıcının kendisi kaydetmeli; ikinci kopya kayıt (Baraj Mah.) duruyor | Devam ediyor |
+| 26.11.2026 16:31 | Apple İşletme: kuruluş hesabı açıldı (Veli Sigorta Aracılık Hizmetleri Ltd. Şti.) | Alan adı doğrulaması reddedildi; belgeyle doğrulama kullanıcıda | Beklemede |
