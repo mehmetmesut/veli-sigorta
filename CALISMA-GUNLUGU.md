@@ -10,10 +10,10 @@
 | 26.11.2026 15:40 | /yorum yönlendirmesi, müşteri kartında "Google Yorumu İste", GA4 telefon/WhatsApp olayı | Canlıda | Tamamlandı |
 | 26.11.2026 15:40 | Instagram adresi firma bilgisine; IndexNow ile 25 adres bildirildi (202) | Tamamlandı | Tamamlandı |
 | 26.11.2026 15:40 | TOBB levha no, GBP adı düzeltmesi, yorum toplama, Bing/Yandex/Apple kayıtları | Kullanıcı tarafında | Beklemede |
-| 26.11.2026 16:40 | Panel/API için X-Robots-Tag noindex; panelin botlara açılmaması kararı (görünürlüğe katkısı yok, saldırı yüzeyi) | Canlıda (20261126-02) | Tamamlandı |
-| 26.11.2026 16:40 | İletişimde "Yol Tarifi Al"; teklif formu GA4 `teklif_gonderimi` olayı; müşteri kartında yorum istendi/geldi takibi (002 göçü) | Canlıda | Tamamlandı |
-| 26.11.2026 16:40 | Search Console URL mülkü (HTML dosyasıyla) doğrulandı; Bing Webmaster'a site eklendi (BingSiteAuth.xml), site haritası gönderildi | Tamamlandı | Tamamlandı |
-| 26.11.2026 16:40 | TOBB levha T0869-7E2C, ilk kayıt 24.04.2009: site, şema, llms.txt, SSS; panel ayarlarında düzenlenebilir | Canlıda (20261126-03) | Tamamlandı |
-| 26.11.2026 16:40 | 5 rehber yazı + 2 taslak yayında (8 yazı), hizmet↔yazı bağlantıları, SSS 26'ya çıktı, IndexNow 32 adres | Canlıda | Tamamlandı |
-| 26.11.2026 16:40 | Bing Places: kayıt sahiplenildi ve PIN ile doğrulandı; e-posta, adres ayrıntısı, 6 ek kategori dolduruldu | Hizmet alanı ve kaydetme kullanıcıda | Devam ediyor |
-| 26.11.2026 16:40 | Yandex İşletme, Apple İşletme | Kullanıcı girişi bekleniyor | Beklemede |
+| 26.11.2026 16:18 | Panel/API için X-Robots-Tag noindex; panelin botlara açılmaması kararı (görünürlüğe katkısı yok, saldırı yüzeyi) | Canlıda (20261126-02) | Tamamlandı |
+| 26.11.2026 16:18 | İletişimde "Yol Tarifi Al"; teklif formu GA4 `teklif_gonderimi` olayı; müşteri kartında yorum istendi/geldi takibi (002 göçü) | Canlıda | Tamamlandı |
+| 26.11.2026 16:18 | Search Console URL mülkü (HTML dosyasıyla) doğrulandı; Bing Webmaster'a site eklendi (BingSiteAuth.xml), site haritası gönderildi | Tamamlandı | Tamamlandı |
+| 26.11.2026 16:18 | TOBB levha T0869-7E2C, ilk kayıt 24.04.2009: site, şema, llms.txt, SSS; panel ayarlarında düzenlenebilir | Canlıda (20261126-03) | Tamamlandı |
+| 26.11.2026 16:18 | 5 rehber yazı + 2 taslak yayında (8 yazı), hizmet↔yazı bağlantıları, SSS 26'ya çıktı, IndexNow 32 adres | Canlıda | Tamamlandı |
+| 26.11.2026 16:18 | Bing Places: kayıt sahiplenildi ve PIN ile doğrulandı; e-posta, adres ayrıntısı, 6 ek kategori dolduruldu | Hizmet alanı ve kaydetme kullanıcıda | Devam ediyor |
+| 26.11.2026 16:18 | Yandex İşletme, Apple İşletme | Kullanıcı girişi bekleniyor | Beklemede |
