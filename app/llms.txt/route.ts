@@ -37,7 +37,7 @@ export async function GET() {
   // gerekçelendiriyor; bu bilgiler dosyanın ilk satırlarında, alıntılanabilir biçimde durur.
   const kimlikSatirlari = [
     sirketler && `- Yetkili acentesi olunan sigorta şirketleri: ${sirketler}`,
-    company.levhaNo && `- TOBB Sigorta Acenteleri Levhası kayıt no: ${company.levhaNo}`,
+    company.levhaNo && `- TOBB Sigorta Acenteleri Levhası kayıt no: ${company.levhaNo}${company.levhaKayitTarihi ? ` (levhaya ilk kayıt: ${company.levhaKayitTarihi})` : ''}`,
     `- Kuruluş: ${company.establishedYear} · Merkez ofis: ${company.address}`,
     `- Ekip: ${ACENTE_EKIBI.map((k) => `${k.ad} (${k.unvan})`).join(', ')}`,
     `- Hizmet bölgesi: Antalya'nın 19 ilçesinin tamamı (${ANTALYA_ILCELERI.join(', ')}); poliçe işlemleri telefon, WhatsApp ve e-postayla da yürütülür`,

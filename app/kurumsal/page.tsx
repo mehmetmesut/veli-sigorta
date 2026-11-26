@@ -284,6 +284,12 @@ export default async function AboutPage() {
                     <span className="font-bold text-slate-900">{company.levhaNo}</span>
                   </div>
                 )}
+                {company.levhaKayitTarihi && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-500">Levhaya İlk Kayıt:</span>
+                    <span className="font-bold text-slate-900">{company.levhaKayitTarihi}</span>
+                  </div>
+                )}
                 <div className="flex justify-between py-1">
                   <span className="text-slate-500">Şehir / İlçe:</span>
                   <span className="font-bold text-slate-900">{company.city} / {company.district}</span>

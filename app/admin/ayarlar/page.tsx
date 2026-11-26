@@ -171,6 +171,27 @@ export default function SettingsCmsPage() {
                 className="w-full p-2.5 rounded-lg border border-slate-300 font-mono"
               />
             </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">TOBB Levha No</label>
+              <input
+                type="text"
+                value={companyInfo.levhaNo || ''}
+                onChange={(e) => setCompanyInfo({ ...companyInfo, levhaNo: e.target.value })}
+                className="w-full p-2.5 rounded-lg border border-slate-300 font-mono"
+              />
+            </div>
+
+            <div>
+              <label className="block font-bold text-slate-700 mb-1">Levhaya İlk Kayıt Tarihi</label>
+              <input
+                type="text"
+                placeholder="GG.AA.YYYY"
+                value={companyInfo.levhaKayitTarihi || ''}
+                onChange={(e) => setCompanyInfo({ ...companyInfo, levhaKayitTarihi: e.target.value })}
+                className="w-full p-2.5 rounded-lg border border-slate-300 font-mono"
+              />
+            </div>
           </div>
 
           <button type="submit" disabled={!canEdit} className={`w-full py-2.5 rounded-xl font-bold inline-flex items-center justify-center gap-2 ${canEdit ? 'bg-blue-900 text-white' : 'bg-slate-200 text-slate-500 cursor-not-allowed'}`}>

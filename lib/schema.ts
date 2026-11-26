@@ -82,6 +82,7 @@ export function getInsuranceAgencySchema(company: CompanyInfo, baseUrl: string, 
             '@type': 'PropertyValue',
             propertyID: 'TOBB Sigorta Acenteleri Levhası Kayıt No',
             value: company.levhaNo,
+            ...(company.levhaKayitTarihi ? { description: `Levhaya ilk kayıt: ${company.levhaKayitTarihi}` } : {}),
           },
         }
       : {}),

@@ -84,6 +84,7 @@ const companyInfoSchema = z.object({
   googleMapsEmbedUrl: urlOrEmpty,
   googleReviewUrl: urlOrEmpty.optional(),
   levhaNo: text(40).optional(),
+  levhaKayitTarihi: text(20).optional(),
   socialMedia,
 }).strict();
 

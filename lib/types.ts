@@ -18,6 +18,8 @@ export interface CompanyInfo {
   googleReviewUrl?: string;
   /** TOBB Sigorta Acenteleri Levhası kayıt numarası; yapay zekâ önerilerinde güven gerekçesi olarak alıntılanıyor. */
   levhaNo?: string;
+  /** Levhaya ilk kayıt tarihi, GG.AA.YYYY (TOBB sorgu ekranındaki biçim). */
+  levhaKayitTarihi?: string;
   socialMedia: {
     facebook?: string;
     instagram?: string;
