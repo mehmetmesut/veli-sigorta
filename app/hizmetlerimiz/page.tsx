@@ -16,7 +16,7 @@ export const revalidate = 15; // Panelden yapılan değişiklikler hızlı yans�
 export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({
     title: "Sigorta Hizmetlerimiz | Trafik, Kasko, DASK, Sağlık — Antalya",
-    description: "Zorunlu trafik, kasko, DASK, tamamlayıcı sağlık, konut ve işyeri sigortası dahil tüm ürünlerimizi inceleyin; Antalya Kepez acentemizden teklif alın.",
+    description: "Zorunlu trafik, kasko, DASK, tamamlayıcı sağlık, konut ve işyeri sigortası dahil tüm ürünlerimizi inceleyin; Antalya’daki acentemizden teklif alın.",
     path: "/hizmetlerimiz",
   });
 }

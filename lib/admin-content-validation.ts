@@ -83,6 +83,7 @@ const companyInfoSchema = z.object({
   workingHours: text(400),
   googleMapsEmbedUrl: urlOrEmpty,
   googleReviewUrl: urlOrEmpty.optional(),
+  levhaNo: text(40).optional(),
   socialMedia,
 }).strict();
 

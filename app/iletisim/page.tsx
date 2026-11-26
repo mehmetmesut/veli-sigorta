@@ -17,7 +17,7 @@ export const revalidate = 15; // Panelden yapılan değişiklikler hızlı yans�
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({
-    title: "İletişim ve Adres | Veli Sigorta Antalya Kepez Acentesi",
+    title: "İletişim ve Adres | Veli Sigorta Antalya Sigorta Acentesi",
     description: "Antalya Kepez Özgürlük Mahallesi’ndeki acentemizin adresi, telefon numaraları, çalışma saatleri, harita konumu ve yol tarifi.",
     path: "/iletisim",
   });
@@ -56,7 +56,7 @@ export default async function ContactPage() {
               <span className="text-white font-bold">İletişim & Lokasyon</span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight font-serif">
-              Bize Ulaşın & Kepez Acentemizi Ziyaret Edin
+              Bize Ulaşın & Ofisimizi Ziyaret Edin
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
               {company.district} {company.city} adresindeki acentemizi çalışma saatleri içinde ziyaret edebilir; telefon ve WhatsApp kanallarımızdan bilgi isteyebilirsiniz.

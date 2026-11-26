@@ -55,7 +55,7 @@ export async function generateMetadata({
   }
 
   return buildPageMetadata({
-    title: `${service.title} | Antalya Kepez — Veli Sigorta`,
+    title: `${service.title} | Antalya — Veli Sigorta`,
     description: service.metaDescription || `${service.title} teminatları, kapsamı ve teklif süreci hakkında bilgi alın.`,
     path: `/hizmetlerimiz/${service.slug}`,
     ogImage: service.featuredImage,

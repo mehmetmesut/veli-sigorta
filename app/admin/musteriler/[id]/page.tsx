@@ -5,14 +5,17 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
   ArrowLeft, CheckCircle2, Edit, FileText, Plus, ShieldCheck, History, X, Save,
-  UserCheck, UserX,
+  UserCheck, UserX, Star,
 } from 'lucide-react';
 import type { Customer, InsuranceService, Policy, QuoteRequest } from '@/lib/types';
 import {
   formatTarih, formatTutar, kalanGun, musteriAdi, musteriKidemi, plakayiBul,
-  riskTanimiPlakasiz, yenilemeZincirleri,
+  riskTanimiPlakasiz, yenilemeZincirleri, yorumIstegiBaglantisi,
 } from '@/lib/police';
 import { bransKisaAd, bransRengi } from '@/lib/brans-renk';
+
+/** Müşteriye giden yorum bağlantısı panelin açıldığı adres değil, her zaman herkese açık alan adıdır. */
+const SITE_ADRESI = 'https://velisigorta.com.tr';
 import { MusteriBasligi, MusteriBilgiBloklari } from '@/components/admin/musteri-bilgi';
 import { durumBildirimi, durumOnayMetni } from '@/lib/musteri-durum';
 import { YenilemeZinciriKarti } from '@/components/admin/YenilemeZinciri';
@@ -365,6 +368,19 @@ export default function CustomerDetailPage() {
             >
               <Edit className="w-4 h-4" /> Düzenle
             </Link>
+            {/* Yapay zekâ rakipleri "işletme kaydında 5,0 puan ve 200 değerlendirme" gerekçesiyle
+                öneriyor; yorum toplamak görünürlüğün en büyük kaldıracı. Poliçe tesliminde ya da
+                hasar çözüldüğünde tek tıkla istenir. */}
+            {yorumIstegiBaglantisi(musteri, SITE_ADRESI) && (
+              <a
+                href={yorumIstegiBaglantisi(musteri, SITE_ADRESI)!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold text-xs inline-flex items-center gap-2"
+              >
+                <Star className="w-4 h-4" /> Google Yorumu İste
+              </a>
+            )}
           </div>
         </div>
 

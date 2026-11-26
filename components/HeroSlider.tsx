@@ -30,7 +30,7 @@ interface HeroSliderProps {
 const DEFAULT_SLIDES = [
   {
     id: 'slide-1',
-    badge: '2004’ten Beri Antalya Kepez’de',
+    badge: '2004’ten Beri Antalya’da',
     title: 'Sigorta İhtiyacınızı Birlikte Değerlendirelim',
     description: 'Trafik, kasko, sağlık, DASK ve diğer sigorta türleri hakkında bilgi ve teklif isteyin.',
     ctaText: 'Hemen Teklif Al',

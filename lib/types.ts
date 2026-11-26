@@ -16,6 +16,8 @@ export interface CompanyInfo {
   googleMapsEmbedUrl: string;
   /** Google İşletme Profili'nde doğrudan yorum formunu açan kısa bağlantı. */
   googleReviewUrl?: string;
+  /** TOBB Sigorta Acenteleri Levhası kayıt numarası; yapay zekâ önerilerinde güven gerekçesi olarak alıntılanıyor. */
+  levhaNo?: string;
   socialMedia: {
     facebook?: string;
     instagram?: string;

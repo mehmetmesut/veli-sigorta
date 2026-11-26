@@ -8,7 +8,7 @@ import { IntentSelector } from '@/components/IntentSelector';
 import { QuickQuoteForm } from '@/components/QuickQuoteForm';
 import { HeroSlider } from '@/components/HeroSlider';
 import { PartnerBrandsSlider } from '@/components/PartnerBrandsSlider';
-import { getInsuranceAgencySchema } from '@/lib/schema';
+import { getInsuranceAgencySchema, acenteSemaEki, yetkiliSirketMetni } from '@/lib/schema';
 import {
   Shield,
   ShieldCheck,
@@ -38,9 +38,12 @@ import { ContentImage } from '@/components/ContentImage';
 export const revalidate = 15; // Panelden yapılan değişiklikler daha hızlı yansısın diye 60'tan 15 saniyeye indirildi
 
 export async function generateMetadata(): Promise<Metadata> {
+  const db = await getDb();
+  const sirketler = yetkiliSirketMetni(db.partners || []);
   return buildPageMetadata({
-    title: "Veli Sigorta | Antalya Kepez Sigorta Acentesi — Trafik, Kasko, DASK",
-    description: "2004’ten beri Antalya Kepez’de hizmet veren aile sigorta acentesi. Trafik, kasko, DASK, tamamlayıcı sağlık ve işyeri sigortalarında teklif alın.",
+    // Rakiplerin tamamı başlığı "Antalya Sigorta Acentesi" ile açıyor; marka sona alındı.
+    title: 'Antalya Sigorta Acentesi | Veli Sigorta · Kasko, Trafik, DASK',
+    description: `2004’ten beri Antalya’da hizmet veren sigorta acentesi.${sirketler ? ` ${sirketler} yetkili acentesi.` : ''} Kasko, trafik, DASK ve sağlık sigortasında teklif alın.`,
     path: "/",
   });
 }
@@ -55,13 +58,13 @@ export default async function HomePage() {
   const partners = db.partners || [];
 
   const baseUrl = process.env.APP_URL || 'https://velisigorta.com.tr';
-  const agencySchema = getInsuranceAgencySchema(company, baseUrl);
+  const agencySchema = getInsuranceAgencySchema(company, baseUrl, acenteSemaEki(db));
 
   const popularServices = services.slice(0, 6);
   const experienceYears = Math.max(0, new Date().getFullYear() - company.establishedYear);
 
   const stats = [
-    { label: 'Faaliyet Geçmişi', value: `${experienceYears} Yıl`, desc: `${company.establishedYear}’ten beri Kepez / Antalya’da hizmet veriyoruz` },
+    { label: 'Faaliyet Geçmişi', value: `${experienceYears} Yıl`, desc: `${company.establishedYear}’ten beri Antalya’da hizmet veriyoruz` },
     { label: 'Hizmet Bölgesi', value: company.city, desc: `${company.district} merkezli acente hizmeti` },
     { label: 'Hizmet Alanı', value: 'Bireysel', desc: 'Bireysel sigorta ihtiyaçları için bilgilendirme' },
     { label: 'Hizmet Alanı', value: 'Kurumsal', desc: 'İşletmeler için sigorta seçenekleri' },
@@ -96,17 +99,27 @@ export default async function HomePage() {
               <div className="lg:col-span-7 space-y-6">
                 <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#1A1A1A] text-[#FDFCFB] text-[10px] font-bold uppercase tracking-[0.2em]">
                   <ShieldCheck className="w-3.5 h-3.5 text-[#F27D26]" />
-                  <span>Antalya Kepez &bull; 2004’ten Beri Beraberiz</span>
+                  <span>Antalya &bull; 2004’ten Beri Beraberiz</span>
                 </div>
 
+                {/* H1 eskiden konum ve hizmet sinyali taşımıyordu ("2004’ten Beri Güvenle Yanınızdayız"). */}
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif text-[#1A1A1A] tracking-tight leading-[1.1]">
-                  2004’ten Beri <br />
-                  <span className="italic font-bold text-[#003366]">Güvenle Yanınızdayız.</span>
+                  Antalya’da 2004’ten Beri <br />
+                  <span className="italic font-bold text-[#003366]">Güvenilir Sigorta Acentesi.</span>
                 </h1>
 
                 <p className="text-base sm:text-lg text-[#555] leading-relaxed font-normal max-w-2xl">
                   Veli Sigorta; sigorta seçeneklerini, teminatları, muafiyetleri ve istisnaları daha anlaşılır biçimde değerlendirmenize yardımcı olur.
                 </p>
+
+                {/* Yapay zekâ önerileri rakipler için "X, Y, Z yetkili acentesi" ve levha numarasını
+                    gerekçe olarak alıntılıyor; bu bilgi görünür ve alıntılanabilir tek cümlede durur. */}
+                {(yetkiliSirketMetni(partners) || company.levhaNo) && (
+                  <p className="text-sm text-[#1A1A1A] font-medium max-w-2xl">
+                    {yetkiliSirketMetni(partners) && <>{yetkiliSirketMetni(partners)} yetkili acentesi.</>}
+                    {company.levhaNo && <> TOBB Sigorta Acenteleri Levhası kayıt no: {company.levhaNo}.</>}
+                  </p>
+                )}
 
                 {/* Key Benefits List */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-xs font-semibold text-[#1A1A1A]">
@@ -276,7 +289,7 @@ export default async function HomePage() {
               
               <div className="lg:col-span-6 space-y-6">
                 <span className="text-[11px] font-semibold text-[#8A7E72] uppercase tracking-[0.3em] block">
-                  Kepez / Antalya Acenteniz
+                  Antalya Acenteniz
                 </span>
                 <h2 className="text-3xl sm:text-4xl font-serif text-[#1A1A1A] tracking-tight">
                   Neden Veli Sigorta? <br />

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getDb } from '@/lib/db';
 import { getBaseUrl } from '@/lib/page-metadata';
+import { ACENTE_EKIBI, ANTALYA_ILCELERI, googleHaritaUrl, yetkiliSirketMetni } from '@/lib/schema';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,10 +30,28 @@ export async function GET() {
     .map((faq) => `- **${faq.question}** ${faq.answer}`)
     .join('\n');
 
+  const sirketler = yetkiliSirketMetni(db.partners || []);
+  const haritaUrl = googleHaritaUrl(db.settings.googleBusinessPlaceId);
+
+  // Yapay zekâ yanıtları rakipleri "yetkili acente", "levha no" ve işletme kaydı üzerinden
+  // gerekçelendiriyor; bu bilgiler dosyanın ilk satırlarında, alıntılanabilir biçimde durur.
+  const kimlikSatirlari = [
+    sirketler && `- Yetkili acentesi olunan sigorta şirketleri: ${sirketler}`,
+    company.levhaNo && `- TOBB Sigorta Acenteleri Levhası kayıt no: ${company.levhaNo}`,
+    `- Kuruluş: ${company.establishedYear} · Merkez ofis: ${company.address}`,
+    `- Ekip: ${ACENTE_EKIBI.map((k) => `${k.ad} (${k.unvan})`).join(', ')}`,
+    `- Hizmet bölgesi: Antalya'nın 19 ilçesinin tamamı (${ANTALYA_ILCELERI.join(', ')}); poliçe işlemleri telefon, WhatsApp ve e-postayla da yürütülür`,
+    haritaUrl && `- Google İşletme Profili: ${haritaUrl}`,
+    `- WhatsApp: +${company.whatsappNumber}`,
+  ].filter(Boolean).join('\n');
+
   // Yalnızca gerçekten yayında olan, indekslenebilir public sayfalar listelenir.
   const llmsTxtContent = `# ${company.name}
 
-> ${company.establishedYear} yılından bu yana ${company.city} ${company.district}'de faaliyet gösteren sigorta acentesi. Trafik, kasko, DASK, sağlık, konut ve işyeri sigortalarında teklif ve danışmanlık sunar.
+> ${company.establishedYear} yılından bu yana Antalya'da hizmet veren sigorta acentesi.${sirketler ? ` ${sirketler} yetkili acentesi.` : ''} Trafik, kasko, DASK, sağlık, konut ve işyeri sigortalarında teklif, poliçe ve hasar sürecinde danışmanlık sunar. Web sitesi online satış için değil; teklif, danışmanlık ve hasar desteği içindir.
+
+## Acente Kimliği
+${kimlikSatirlari}
 
 ## Ana Sayfalar
 - [Ana Sayfa](${base}/): Acentenin tanıtımı, öne çıkan sigorta ürünleri ve hızlı teklif formu.

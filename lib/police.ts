@@ -238,6 +238,23 @@ export function whatsappBaglantisi(telefon: string | undefined, mesaj: string): 
 }
 
 /**
+ * Müşteriden Google yorumu isteyen hazır WhatsApp bağlantısı; cep numarası yoksa null.
+ *
+ * Mesaj karşılığında hiçbir şey vaat etmez ve yalnız memnun müşteriye gönderilmek üzere
+ * kurgulanmaz: teşvikli ya da seçici yorum isteme Google politikasına aykırıdır.
+ */
+export function yorumIstegiBaglantisi(
+  musteri: Pick<Customer, 'tip' | 'ad' | 'soyad' | 'firmaUnvani' | 'markaAdi' | 'mobilTelefon'>,
+  siteUrl: string,
+): string | null {
+  const hitap = musteri.tip === 'bireysel' && musteri.ad ? musteri.ad : musteriAdi(musteri);
+  const mesaj =
+    `Merhaba ${hitap}, Veli Sigorta'yı tercih ettiğiniz için teşekkür ederiz. ` +
+    `Deneyiminizi Google'da kısa bir yorumla paylaşırsanız diğer Antalyalılara da yol göstermiş olursunuz: ${siteUrl}/yorum`;
+  return whatsappBaglantisi(musteri.mobilTelefon, mesaj);
+}
+
+/**
  * Poliçenin branş alanlarından plakayı çıkarır.
  *
  * Plaka veritabanında `bransAlanlari` sözlüğünde AYRI bir değer olarak durur ama

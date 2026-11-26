@@ -56,9 +56,9 @@ const DEFAULT_COMPANY_INFO: CompanyInfo = {
 };
 
 const DEFAULT_SETTINGS: SiteSettings = {
-  siteTitle: 'Veli Sigorta | Antalya Kepez Kurumsal ve Aile Sigorta Acentesi',
+  siteTitle: 'Veli Sigorta | Antalya Sigorta Acentesi · 2004’ten Beri',
   metaDescription:
-    "2004'ten beri Antalya Kepez'de hizmet veren aile sigorta acentesi. Trafik, Kasko, Sağlık, DASK, Konut ve diğer sigorta ihtiyaçlarınız için bilgi alın.",
+    "2004'ten beri Antalya'da hizmet veren aile sigorta acentesi. Trafik, Kasko, Sağlık, DASK, Konut ve diğer sigorta ihtiyaçlarınız için bilgi alın.",
   // Paylaşım için hazırlanmış 1200×630 / ~34 KB görsel; ham Logo.png 2,2 MB ve
   // saydam zeminliydi, WhatsApp önizlemeyi hiç göstermiyordu.
   defaultOgImage: '/paylasim-gorseli.jpg',

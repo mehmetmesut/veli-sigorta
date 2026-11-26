@@ -9,15 +9,15 @@ import { MapPin, FileText, CheckCircle2, UserCheck } from 'lucide-react';
 import type { Metadata } from 'next';
 import { buildPageMetadata } from '@/lib/page-metadata';
 import { YapisalVeri } from '@/components/YapisalVeri';
-import { getBreadcrumbSchema, getInsuranceAgencySchema, getWebPageSchema } from '@/lib/schema';
+import { getBreadcrumbSchema, getInsuranceAgencySchema, acenteSemaEki, getWebPageSchema, ACENTE_EKIBI, ANTALYA_ILCELERI, yetkiliSirketMetni } from '@/lib/schema';
 import { getBaseUrl } from '@/lib/page-metadata';
 
 export const revalidate = 15; // Panelden yapılan değişiklikler hızlı yansısın diye 60 saniyeden düşürüldü
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({
-    title: "Kurumsal | 2004’ten Beri Antalya Kepez’de Veli Sigorta",
-    description: "Veli Sigorta Aracılık Hizmetleri Ltd. Şti. hakkında: kuruluş hikâyemiz, Antalya Kepez’deki acentemiz, resmi künye ve çalışma ilkelerimiz.",
+    title: "Kurumsal | 2004’ten Beri Antalya’da Veli Sigorta",
+    description: "Veli Sigorta Aracılık Hizmetleri Ltd. Şti. hakkında: kuruluş hikâyemiz, Antalya’daki acentemiz, ekibimiz, resmi künye ve çalışma ilkelerimiz.",
     path: "/kurumsal",
   });
 }
@@ -26,6 +26,7 @@ export default async function AboutPage() {
   const db = await getDb();
   const company = db.companyInfo;
   const experienceYears = Math.max(0, new Date().getFullYear() - company.establishedYear);
+  const partners = (db.partners || []).filter((p) => p.isActive);
 
   const baseUrl = getBaseUrl();
   // Kurumsal sayfa kurumun kendisini anlatıyor; ajans şeması burada da verilir ki
@@ -38,7 +39,7 @@ export default async function AboutPage() {
       yol: '/kurumsal',
       baseUrl,
     }),
-    getInsuranceAgencySchema(company, baseUrl),
+    getInsuranceAgencySchema(company, baseUrl, acenteSemaEki(db)),
     getBreadcrumbSchema([{ name: 'Ana Sayfa', url: '/' }, { name: 'Kurumsal', url: '/kurumsal' }], baseUrl),
   ];
 
@@ -63,7 +64,7 @@ export default async function AboutPage() {
                 Veli Sigorta Aracılık Hizmetleri Ltd. Şti.
               </h1>
               <p className="text-xs sm:text-sm text-slate-300 max-w-2xl leading-relaxed">
-                2004 yılında Antalya Kepez’de faaliyete başlayan aile işletmesi niteliğindeki sigorta acentesiyiz. Bireysel ve kurumsal sigorta ihtiyaçları için hizmet veriyoruz.
+                2004’ten beri Antalya’da hizmet veren, aile işletmesi niteliğindeki sigorta acentesiyiz. Antalya’nın tüm ilçelerinde bireysel ve kurumsal sigorta ihtiyaçları için hizmet veriyoruz.
               </p>
             </div>
 
@@ -120,10 +121,10 @@ export default async function AboutPage() {
                   {/* Photo Overlay Badge */}
                   <div className="bg-slate-900 p-3.5 text-white flex items-center justify-between gap-3 sm:absolute sm:bottom-3 sm:left-3 sm:right-3 sm:rounded-xl sm:border sm:border-white/10 sm:bg-slate-900/85 sm:backdrop-blur-md">
                     <div className="space-y-0.5">
-                      <div className="font-bold text-xs sm:text-sm text-white">Veli Sigorta Kurucusu</div>
+                      <div className="font-bold text-xs sm:text-sm text-white">Veli UĞURCU · Kurucu ve Müdür</div>
                       <div className="text-[10px] text-slate-300 flex items-center gap-1">
                         <MapPin className="w-3 h-3 text-blue-400 shrink-0" />
-                        <span>Veli UĞURCU | Antalya</span>
+                        <span>Kepez | Antalya</span>
                       </div>
                     </div>
                     <span className="text-[10px] bg-blue-600/80 text-white px-2.5 py-1 rounded-lg shrink-0 font-bold uppercase tracking-wider">
@@ -139,9 +140,9 @@ export default async function AboutPage() {
               {/* Founder and service approach */}
               <div className="lg:col-span-6 space-y-6">
                 <div className="p-5 rounded-2xl bg-slate-900 text-white space-y-3 border border-slate-800 shadow-sm">
-                  <h3 className="font-serif text-xl font-bold">2004’ten beri Kepez’de</h3>
+                  <h3 className="font-serif text-xl font-bold">2004’ten beri Antalya’da</h3>
                   <p className="text-xs sm:text-sm leading-relaxed text-slate-200">
-                    Şirketimizin kurucusu, Veli Sigorta’nın Antalya Kepez’de başlayan acentelik faaliyetlerini aile işletmesi anlayışıyla sürdürmektedir.
+                    Şirketimizin kurucusu, Veli Sigorta’nın 2004’te Antalya’da başlayan acentelik faaliyetlerini aile işletmesi anlayışıyla sürdürmektedir.
                   </p>
                 </div>
 
@@ -172,6 +173,44 @@ export default async function AboutPage() {
             </div>
           </div>
 
+          <section aria-labelledby="ekibimiz" className="space-y-5">
+            <div className="space-y-1">
+              <span className="text-xs font-extrabold text-blue-900 uppercase tracking-widest">Ekibimiz</span>
+              <h2 id="ekibimiz" className="text-2xl font-bold text-slate-900">Sigortanızla İlgilenen Ekip</h2>
+              {partners.length > 0 && (
+                <p className="text-xs sm:text-sm text-slate-600">{yetkiliSirketMetni(partners)} yetkili acentesi olarak Antalya genelinde hizmet veriyoruz.</p>
+              )}
+            </div>
+            <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {ACENTE_EKIBI.map((kisi) => (
+                <li key={kisi.ad} className="p-4 rounded-xl bg-white border border-slate-200 flex items-center gap-3">
+                  <UserCheck className="w-5 h-5 text-blue-800 shrink-0" aria-hidden />
+                  <div>
+                    <div className="font-bold text-slate-900 text-sm">{kisi.ad}</div>
+                    <div className="text-xs text-slate-500">{kisi.unvan}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section aria-labelledby="hizmet-bolgemiz" className="space-y-4">
+            <div className="space-y-1">
+              <span className="text-xs font-extrabold text-blue-900 uppercase tracking-widest">Hizmet Bölgemiz</span>
+              <h2 id="hizmet-bolgemiz" className="text-2xl font-bold text-slate-900">Antalya’nın 19 İlçesinde Sigorta Hizmeti</h2>
+              <p className="text-xs sm:text-sm text-slate-600 max-w-3xl leading-relaxed">
+                Merkez ofisimiz Kepez’dedir. Teklif, poliçe ve hasar işlemleri telefon, WhatsApp ve e-postayla da yürütüldüğü için Antalya’nın her ilçesinden müşterilerimize hizmet veriyoruz.
+              </p>
+            </div>
+            <ul className="flex flex-wrap gap-2" aria-label="Hizmet verilen ilçeler">
+              {ANTALYA_ILCELERI.map((ilce) => (
+                <li key={ilce} className="px-3 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700">
+                  {ilce}
+                </li>
+              ))}
+            </ul>
+          </section>
+
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-7 space-y-4">
               <span className="text-xs font-extrabold text-blue-900 uppercase tracking-widest">
@@ -181,7 +220,7 @@ export default async function AboutPage() {
                 Acente Tarihçemiz ve Hizmet Anlayışımız
               </h2>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Veli Sigorta, 2004 yılında Antalya’nın Kepez ilçesinde faaliyete başlamıştır. Acentemiz bireysel ve kurumsal sigorta ihtiyaçları için bilgilendirme, teklif ve poliçe süreçlerinde hizmet verir.
+                Veli Sigorta, 2004’ten bu yana Antalya’da hizmet vermektedir; merkez ofisimiz Kepez’dedir. Acentemiz bireysel ve kurumsal sigorta ihtiyaçları için bilgilendirme, teklif ve poliçe süreçlerinde hizmet verir.
               </p>
               <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                 Araç, konut, işyeri, sağlık ve sorumluluk sigortaları dâhil farklı ürün grupları hakkında güncel seçenekleri acente ekibimize sorabilirsiniz.
@@ -239,6 +278,12 @@ export default async function AboutPage() {
                   <span className="text-slate-500">MERSİS No:</span>
                   <span className="font-bold text-slate-900">{company.mersisNo}</span>
                 </div>
+                {company.levhaNo && (
+                  <div className="flex justify-between py-1 border-b border-slate-100">
+                    <span className="text-slate-500">TOBB Levha No:</span>
+                    <span className="font-bold text-slate-900">{company.levhaNo}</span>
+                  </div>
+                )}
                 <div className="flex justify-between py-1">
                   <span className="text-slate-500">Şehir / İlçe:</span>
                   <span className="font-bold text-slate-900">{company.city} / {company.district}</span>

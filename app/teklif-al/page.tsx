@@ -14,8 +14,8 @@ export const revalidate = 15; // Panelden yapılan değişiklikler hızlı yans�
 
 export async function generateMetadata(): Promise<Metadata> {
   return buildPageMetadata({
-    title: "Ücretsiz Sigorta Teklifi Al | Veli Sigorta Antalya Kepez",
-    description: "İhtiyacınıza uygun sigorta için hızlı teklif formu. Trafik, kasko, DASK, sağlık ve işyeri sigortalarında Antalya Kepez acentemizden fiyat alın.",
+    title: "Ücretsiz Sigorta Teklifi Al | Veli Sigorta Antalya",
+    description: "İhtiyacınıza uygun sigorta için hızlı teklif formu. Trafik, kasko, DASK, sağlık ve işyeri sigortalarında Antalya’daki acentemizden fiyat alın.",
     path: "/teklif-al",
   });
 }

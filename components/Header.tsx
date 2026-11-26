@@ -69,7 +69,7 @@ export function Header({
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-6 flex-wrap">
             <span className="font-medium tracking-wider">
-              Antalya / Kepez &bull; {mainPhone}
+              Antalya &bull; {mainPhone}
             </span>
             <span className="hidden sm:inline opacity-60">•</span>
             <span className="hidden sm:inline opacity-80">{mobilePhone}</span>

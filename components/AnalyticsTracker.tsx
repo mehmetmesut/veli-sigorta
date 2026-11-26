@@ -71,5 +71,20 @@ export function AnalyticsTracker() {
     }).catch(() => undefined);
   }, [pathname]);
 
+  // Telefon ve WhatsApp tıklamaları GA4'e olay olarak gider. Site formu kayıt tutmadığı için
+  // dönüşüm hiç ölçülmüyordu; hangi sayfanın arama getirdiği ancak böyle görülür.
+  useEffect(() => {
+    const tikla = (e: MouseEvent) => {
+      const a = (e.target as Element | null)?.closest?.('a[href]');
+      const href = a?.getAttribute('href') || '';
+      const kanal = href.startsWith('tel:') ? 'telefon' : /wa\.me|whatsapp\.com/.test(href) ? 'whatsapp' : null;
+      if (!kanal || window.location.pathname.startsWith('/admin')) return;
+      const gtag = (window as unknown as { gtag?: (...args: unknown[]) => void }).gtag;
+      gtag?.('event', 'iletisim_tiklama', { kanal, sayfa: window.location.pathname });
+    };
+    document.addEventListener('click', tikla);
+    return () => document.removeEventListener('click', tikla);
+  }, []);
+
   return null;
 }

@@ -55,7 +55,7 @@ export function Footer({ company }: FooterProps) {
             </Link>
 
             <p className="text-xs text-slate-400 leading-relaxed font-normal">
-              Veli Sigorta Aracılık Hizmetleri Limited Şirketi, 2004 yılından bu yana Antalya Kepez’de bireysel ve kurumsal sigorta ihtiyaçları için hizmet veren aile işletmesidir.
+              Veli Sigorta Aracılık Hizmetleri Limited Şirketi, 2004 yılından bu yana Antalya’da bireysel ve kurumsal sigorta ihtiyaçları için hizmet veren aile işletmesidir.
             </p>
 
             <div className="p-4 bg-[#242424] border border-[#333] space-y-1 text-[11px]">
@@ -63,6 +63,9 @@ export function Footer({ company }: FooterProps) {
               <div className="text-slate-400">Vergi Dairesi: <span className="text-slate-200 font-medium">{company.taxOffice} - {company.taxNumber}</span></div>
               <div className="text-slate-400">Ticaret Sicil No: <span className="text-slate-200 font-medium">{company.tradeRegistryNo}</span></div>
               <div className="text-slate-400">MERSİS No: <span className="text-slate-200 font-medium">{company.mersisNo}</span></div>
+              {company.levhaNo && (
+                <div className="text-slate-400">TOBB Levha No: <span className="text-slate-200 font-medium">{company.levhaNo}</span></div>
+              )}
             </div>
           </div>
 
@@ -109,7 +112,7 @@ export function Footer({ company }: FooterProps) {
           {/* Column 4: Contact & Location */}
           <div className="space-y-3">
             <h3 className="text-xs font-bold text-white uppercase tracking-[0.2em] border-b border-[#333] pb-2 text-[#8A7E72]">
-              İletişim & Kepez Acentesi
+              İletişim & Merkez Ofis
             </h3>
             
             <div className="space-y-3 text-xs">
