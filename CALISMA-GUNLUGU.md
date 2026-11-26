@@ -19,3 +19,5 @@
 | 26.11.2026 16:18 | Yandex İşletme, Apple İşletme | Kullanıcı girişi bekleniyor | Beklemede |
 | 26.11.2026 16:31 | Yandex İşletme: "Veli Sigorta Acenteliği" kaydı SMS ile sahiplenildi; saat 9–18, site .com.tr, e-posta .com.tr formda düzeltildi | Kaydetme sunucuda 444 ile reddedildi, kullanıcının kendisi kaydetmeli; ikinci kopya kayıt (Baraj Mah.) duruyor | Devam ediyor |
 | 26.11.2026 16:31 | Apple İşletme: kuruluş hesabı açıldı (Veli Sigorta Aracılık Hizmetleri Ltd. Şti.) | Alan adı doğrulaması reddedildi; belgeyle doğrulama kullanıcıda | Beklemede |
+| 26.11.2026 16:50 | Yandex: saat 9–18, site/e-posta .com.tr, yalnız sitedeki 3 telefon, adres açıklamasında Özgürlük Mah. + Gökkaya Apt.; kaydedildi (200) | Yandex adres veritabanı binayı Yeşiltepe Mah. gösteriyor, seçilebilir Özgürlük adresi yok | Tamamlandı |
+| 26.11.2026 16:50 | Apple: alan adı TXT kaydı Plesk DNS'e eklendi ve doğrulandı; ikinci yöntem için vergi levhası masaüstüne kopyalandı | Belge yükleme ve gönderme kullanıcıda | Devam ediyor |
